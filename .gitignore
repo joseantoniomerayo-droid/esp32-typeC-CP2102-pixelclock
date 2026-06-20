@@ -1,0 +1,40 @@
+# Build
+build/
+sdkconfig
+sdkconfig.old
+sdkconfig.defaults
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+*.cmake
+*.elf
+*.bin
+*.map
+*.hex
+*.o
+*.d
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Credentials / secrets
+**/include/credentials.h
+**/include/secrets.h
+**/include/wifi_credentials.h
+nvs.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
