@@ -1,5 +1,6 @@
 # Build
 build/
+.pio/
 sdkconfig
 sdkconfig.old
 sdkconfig.defaults
