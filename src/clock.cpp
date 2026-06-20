@@ -127,10 +127,12 @@ static uint16_t hsvTo565(int h) {
   return hsvTo565Full(h, 1.0f, 1.0f);
 }
 
-// Gradiente del original: amarillo (h=80) → rojo (h=0)
+// Gradiente: cian → verde → amarillo → naranja → rojo
+// Las horas en cian/verde contrastan fuerte con el texto gris inferior
 static uint16_t gradientColor(int x, int width) {
   float t = (float)x / (float)(width - 1);
-  int h = (int)(80 - 80 * t);
+  // HSV de 180 (cian) a 0 (rojo) con s=1, v=1
+  int h = 180 - (int)(180 * t);
   if (h < 0) h = 0;
   return hsvTo565(h);
 }
