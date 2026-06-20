@@ -252,6 +252,15 @@ void drawClock() {
     return;
   }
 
+  // ─── Brillo automático: nocturno (23-7) / diurno ────────
+  static int lastBrightness = -1;
+  int targetBrightness = (t.tm_hour >= 23 || t.tm_hour < 7) ? 5 : 40;
+  if (targetBrightness != lastBrightness) {
+    dma_display->setPanelBrightness(targetBrightness);
+    lastBrightness = targetBrightness;
+    Serial.printf("Brillo: %d (hora=%d)\n", targetBrightness, t.tm_hour);
+  }
+
   // ─── HORA: HH:MM:SS — textSize=3, gradiente amarillo→rojo ──
   char timeStr[9];
   strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &t);
