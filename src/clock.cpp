@@ -284,7 +284,9 @@ void drawClock() {
   // ─── CLIMA: esquina superior derecha ─────────────────────
   drawWeatherWidget();
 
-  // ─── MARQUEE INFERIOR: día + fecha (scroll suave) ────────
+  // ─── MARQUEE INFERIOR: día + fecha (animación periódica) ──
+  // Ciclo: entra desde derecha → pausa centrado → sale por izquierda
+  // 4 ciclos/minuto = 15s por ciclo
   const char* days[] = {"domingo","lunes","martes","miercoles","jueves","viernes","sabado"};
   char marquee[32];
   snprintf(marquee, sizeof(marquee), "%s %02d-%02d-%04d",
@@ -292,12 +294,17 @@ void drawClock() {
 
   int marqueeW = strlen(marquee) * 6;
   int screenW = w;
+  int centerX = (screenW - marqueeW) / 2;
 
   dma_display->setTextSize(1);
   dma_display->setTextColor(dma_display->color565(180, 180, 180));
 
+  // Animación periódica (solo si el texto cabe en pantalla)
+  static unsigned long animStart = 0;
+  if (animStart == 0) animStart = millis();
+
   if (marqueeW > screenW) {
-    // Scroll si el texto es más ancho que la pantalla
+    // Texto largo: scroll continuo clásico
     if (millis() - lastScrollUpdate > 30) {
       lastScrollUpdate = millis();
       dayDateScroll--;
@@ -306,9 +313,38 @@ void drawClock() {
     dma_display->setCursor(dayDateScroll, PANEL_RES_Y - 8);
     dma_display->print(marquee);
   } else {
-    // Centrado si cabe
-    dma_display->setCursor((screenW - marqueeW) / 2, PANEL_RES_Y - 8);
-    dma_display->print(marquee);
+    // Animación: entra → pausa → sale  (4 ciclos/min)
+    const unsigned long CYCLE = 15000;
+    const unsigned long SLIDE_IN = 600;
+    const unsigned long HOLD = 11000;
+    const unsigned long SLIDE_OUT = 600;
+    // OFF = CYCLE - SLIDE_IN - HOLD - SLIDE_OUT = 2800ms
+
+    unsigned long t = (millis() - animStart) % CYCLE;
+    int x;
+
+    if (t < SLIDE_IN) {
+      // Entrando desde la derecha (ease-out cuadrático)
+      float p = (float)t / SLIDE_IN;
+      float ease = 1.0f - (1.0f - p) * (1.0f - p);  // ease-out quad
+      x = screenW + (int)((centerX - screenW) * ease);
+      dma_display->setCursor(x, PANEL_RES_Y - 8);
+      dma_display->print(marquee);
+
+    } else if (t < SLIDE_IN + HOLD) {
+      // Visible centrado
+      dma_display->setCursor(centerX, PANEL_RES_Y - 8);
+      dma_display->print(marquee);
+
+    } else if (t < SLIDE_IN + HOLD + SLIDE_OUT) {
+      // Saliendo por la izquierda (ease-in cuadrático)
+      float p = (float)(t - SLIDE_IN - HOLD) / SLIDE_OUT;
+      float ease = p * p;  // ease-in quad
+      x = centerX + (int)((-marqueeW - centerX) * ease);
+      dma_display->setCursor(x, PANEL_RES_Y - 8);
+      dma_display->print(marquee);
+
+    } // else: OFF, no se dibuja nada
   }
 
   dma_display->flipDMABuffer();
