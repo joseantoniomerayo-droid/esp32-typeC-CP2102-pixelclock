@@ -68,9 +68,9 @@ sudo cp index.html /var/www/html/index.html
 Si tu broker está en otra IP, edita las constantes al inicio del `<script>` en `index.html`:
 
 ```javascript
-const BROKER = 'ws://192.168.1.59:9001/mqtt';
-const USER = 'pixelclock';
-const PASS = 'pixelclock';
+const BROKER = 'ws://TU_IP:9001/mqtt';
+const USER = 'tu_usuario';
+const PASS = 'tu_contraseña';
 ```
 
 **Secciones de la interfaz:**
