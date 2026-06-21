@@ -16,23 +16,18 @@ struct Weather {
 static Weather weather = {0, 0, false, 0};
 
 static unsigned long lastWeatherFetch = 0;
-static unsigned long weatherInterval = 0;  // se actualiza cada vez
+static unsigned long weatherInterval = 0;
 
 // ─── NTP ───────────────────────────────────────────────
 bool syncNTP() {
   if (WiFi.status() != WL_CONNECTED) return false;
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.nist.gov");
   struct tm t;
-  if (getLocalTime(&t, 4000)) {
-    Serial.printf("NTP: %02d:%02d\n", t.tm_hour, t.tm_min);
-    return true;
-  }
-  Serial.println("NTP FAIL");
+  if (getLocalTime(&t, 4000)) return true;
   return false;
 }
 
 // ─── Weather fetch (Open-Meteo) ────────────────────────
-// Sin ArduinoJson — parse manual para evitar crashes
 void fetchWeather() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -46,21 +41,15 @@ void fetchWeather() {
     "&current_weather=true&timezone=auto",
     getLatitud(), getLongitud());
 
-  if (!http.begin(url)) {
-    Serial.println("Weather: begin fail");
-    return;
-  }
-
+  if (!http.begin(url)) return;
   int code = http.GET();
 
   if (code == 200) {
     String payload = http.getString();
 
-    // Buscar dentro de "current_weather": { ... }
     int cw = payload.indexOf("\"current_weather\":");
-    if (cw < 0) { weather.valid = false; Serial.println("Weather: no current_weather"); http.end(); return; }
+    if (cw < 0) { weather.valid = false; http.end(); return; }
 
-    // Buscar "temperature": dentro de current_weather
     int tempPos = payload.indexOf("\"temperature\":", cw);
     if (tempPos >= 0) {
       int s = tempPos + 14;
@@ -69,7 +58,6 @@ void fetchWeather() {
       if (e > s) weather.temp = payload.substring(s, e).toFloat();
     }
 
-    // Buscar "weathercode": dentro de current_weather
     int wcPos = payload.indexOf("\"weathercode\":", cw);
     if (wcPos >= 0) {
       int s = wcPos + 13;
@@ -80,15 +68,12 @@ void fetchWeather() {
 
     weather.valid = (tempPos >= 0);
     weather.updated = millis();
-    Serial.printf("Weather: code=%d %.1f°C\n", weather.code, weather.temp);
-  } else {
-    Serial.printf("Weather HTTP fail: %d\n", code);
   }
   http.end();
 }
 
 // ════════════════════════════════════════════════════════
-//  RENDER — ESTILO RELOJPIXEL ORIGINAL
+//  RENDER
 // ════════════════════════════════════════════════════════
 
 // ─── HSV → RGB565 ──────────────────────────────────────
@@ -116,10 +101,8 @@ static uint16_t hsvTo565(int h) {
 }
 
 // Gradiente: cian → verde → amarillo → naranja → rojo
-// Las horas en cian/verde contrastan fuerte con el texto gris inferior
 static uint16_t gradientColor(int x, int width) {
   float t = (float)x / (float)(width - 1);
-  // HSV de 180 (cian) a 0 (rojo) con s=1, v=1
   int h = 180 - (int)(180 * t);
   if (h < 0) h = 0;
   return hsvTo565(h);
@@ -163,12 +146,12 @@ static const uint8_t* pickWeatherIcon(int wmoCode) {
 }
 
 static uint16_t weatherIconColor(int wmoCode) {
-  if (wmoCode == 0 || wmoCode == 1) return dma_display->color565(255, 200, 0);   // sol: amarillo
-  if (wmoCode <= 3) return dma_display->color565(200, 200, 200);                   // nube: gris
-  if (wmoCode <= 48) return dma_display->color565(180, 180, 180);                  // niebla: gris claro
-  if (wmoCode <= 67) return dma_display->color565(100, 150, 255);                  // lluvia: azul
-  if (wmoCode <= 77) return dma_display->color565(220, 240, 255);                  // nieve: blanco
-  if (wmoCode >= 95) return dma_display->color565(180, 100, 255);                  // tormenta: violeta
+  if (wmoCode == 0 || wmoCode == 1) return dma_display->color565(255, 200, 0);
+  if (wmoCode <= 3) return dma_display->color565(200, 200, 200);
+  if (wmoCode <= 48) return dma_display->color565(180, 180, 180);
+  if (wmoCode <= 67) return dma_display->color565(100, 150, 255);
+  if (wmoCode <= 77) return dma_display->color565(220, 240, 255);
+  if (wmoCode >= 95) return dma_display->color565(180, 100, 255);
   return dma_display->color565(200, 200, 200);
 }
 
@@ -179,25 +162,19 @@ static void drawWeatherWidget() {
   const uint8_t* icon = pickWeatherIcon(weather.code);
   uint16_t col = weatherIconColor(weather.code);
 
-  int tempWidth = 24;
-  int iconX = PANEL_RES_X * PANEL_CHAIN - 8 - 2 - tempWidth;  // 94
+  int iconX = PANEL_RES_X * PANEL_CHAIN - 8 - 2 - 24;
   int iconY = 1;
 
-  // Dibujar icono
-  for (int row = 0; row < 8; row++) {
-    for (int colB = 0; colB < 8; colB++) {
-      if (icon[row] & (1 << (7 - colB))) {
+  for (int row = 0; row < 8; row++)
+    for (int colB = 0; colB < 8; colB++)
+      if (icon[row] & (1 << (7 - colB)))
         dma_display->drawPixel(iconX + colB, iconY + row, col);
-      }
-    }
-  }
 
-  // Temperatura
   dma_display->setTextSize(1);
   dma_display->setTextColor(dma_display->color565(255, 255, 255));
   dma_display->setCursor(iconX + 10, 2);
   dma_display->printf("%.0f", weather.temp);
-  dma_display->print((char)247);  // °
+  dma_display->print((char)247);
   dma_display->print("C");
 }
 
@@ -211,16 +188,15 @@ void showConnecting(const char* msg) {
   dma_display->flipDMABuffer();
 }
 
-// ─── Renderiza el reloj (estilo original) ──────────────
+// ─── Renderiza el reloj ────────────────────────────────
 static unsigned long lastDraw = 0;
 static int dayDateScroll = 0;
 static unsigned long lastScrollUpdate = 0;
 
 void drawClock() {
-  if (millis() - lastDraw < 60) return;  // ~16 fps como el original
+  if (millis() - lastDraw < 60) return;
   lastDraw = millis();
 
-  // Weather refresh
   weatherInterval = (unsigned long)getClimaRefresh() * 60 * 1000;
   if (WiFi.status() == WL_CONNECTED &&
       (millis() - lastWeatherFetch > weatherInterval || !weather.valid)) {
@@ -230,7 +206,7 @@ void drawClock() {
 
   struct tm t;
   bool timeOk = getLocalTime(&t, 50);
-  int w = PANEL_RES_X * PANEL_CHAIN;  // 128
+  int w = PANEL_RES_X * PANEL_CHAIN;
 
   dma_display->fillScreen(0);
 
@@ -243,111 +219,78 @@ void drawClock() {
     return;
   }
 
-  // ─── Brillo automático ────────────────────────────────
+  // ─── Brillo automático ──────────────────────────────
   static int lastBrightness = -1;
-  int inicioNoche = nvsLoadInt("inicio_noche", 23);
-  int finNoche = nvsLoadInt("fin_noche", 7);
-  bool esNoche = (t.tm_hour >= inicioNoche || t.tm_hour < finNoche);
+  bool esNoche = (t.tm_hour >= nvsLoadInt("inicio_noche", 23) || t.tm_hour < nvsLoadInt("fin_noche", 7));
   int targetBrightness = esNoche ? nvsLoadInt("brillo_noche", 1) : nvsLoadInt("brillo_dia", 40);
   if (targetBrightness != lastBrightness) {
     dma_display->setPanelBrightness(targetBrightness);
     lastBrightness = targetBrightness;
-    Serial.printf("Brillo: %d (hora=%d)\n", targetBrightness, t.tm_hour);
   }
 
-  // ─── HORA: HH:MM:SS — textSize=3, gradiente amarillo→rojo ──
+  // ─── HORA: HH:MM:SS — textSize=3 ────────────────────
   char timeStr[9];
   strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &t);
 
-  const int textSize = 3;
-  const int charW = 5 * textSize + 1;  // 16px
-  const int len = 8;
-  const int totalW = len * charW;      // 128 — ocupa todo el ancho
-  int originX = 0;                     // (128-128)/2 = 0, pegado a la izquierda
-  int originY = 10;                    // igual que el original
-
-  dma_display->setTextSize(textSize);
-  for (int idx = 0; idx < len; idx++) {
-    int charX = originX + idx * charW;
-    uint16_t col = gradientColor(charX + charW / 2, w);
-    dma_display->setTextColor(col);
-    dma_display->setCursor(charX, originY);
+  dma_display->setTextSize(3);
+  for (int idx = 0; idx < 8; idx++) {
+    int charX = idx * 16;
+    dma_display->setTextColor(gradientColor(charX + 8, w));
+    dma_display->setCursor(charX, 10);
     dma_display->print(timeStr[idx]);
   }
 
-  // ─── CLIMA: esquina superior derecha ─────────────────────
+  // ─── CLIMA ──────────────────────────────────────────
   drawWeatherWidget();
 
-  // ─── MARQUEE INFERIOR: día + fecha (animación periódica) ──
-  // Ciclo: entra desde derecha → pausa centrado → sale por izquierda
-  // 4 ciclos/minuto = 15s por ciclo
+  // ─── MARQUEE INFERIOR: día + fecha ──────────────────
   const char* days[] = {"domingo","lunes","martes","miercoles","jueves","viernes","sabado"};
   char marquee[32];
   snprintf(marquee, sizeof(marquee), "%s %02d-%02d-%04d",
            days[t.tm_wday], t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
 
   int marqueeW = strlen(marquee) * 6;
-  int screenW = w;
-  int centerX = (screenW - marqueeW) / 2;
+  int centerX = (w - marqueeW) / 2;
 
   dma_display->setTextSize(1);
   dma_display->setTextColor(dma_display->color565(180, 180, 180));
 
-  // Animación periódica (solo si el texto cabe en pantalla)
   static unsigned long animStart = 0;
   if (animStart == 0) animStart = millis();
 
-  if (marqueeW > screenW) {
-    // Texto largo: scroll continuo clásico
+  if (marqueeW > w) {
     if (millis() - lastScrollUpdate > 30) {
       lastScrollUpdate = millis();
       dayDateScroll--;
-      if (dayDateScroll < -marqueeW) dayDateScroll = screenW;
+      if (dayDateScroll < -marqueeW) dayDateScroll = w;
     }
     dma_display->setCursor(dayDateScroll, PANEL_RES_Y - 8);
     dma_display->print(marquee);
   } else {
-    // Animación: entra → pausa → sale  (4 ciclos/min)
     const unsigned long CYCLE = 15000;
     const unsigned long SLIDE_IN = 600;
     const unsigned long HOLD = 11000;
     const unsigned long SLIDE_OUT = 600;
-    // OFF = CYCLE - SLIDE_IN - HOLD - SLIDE_OUT = 2800ms
 
-    unsigned long t = (millis() - animStart) % CYCLE;
-    int x;
+    unsigned long phase = (millis() - animStart) % CYCLE;
 
-    if (t < SLIDE_IN) {
-      // Entrando desde la derecha (ease-out cuadrático)
-      float p = (float)t / SLIDE_IN;
-      float ease = 1.0f - (1.0f - p) * (1.0f - p);  // ease-out quad
-      x = screenW + (int)((centerX - screenW) * ease);
+    if (phase < SLIDE_IN) {
+      float p = (float)phase / SLIDE_IN;
+      float ease = 1.0f - (1.0f - p) * (1.0f - p);
+      int x = w + (int)((centerX - w) * ease);
       dma_display->setCursor(x, PANEL_RES_Y - 8);
       dma_display->print(marquee);
-
-    } else if (t < SLIDE_IN + HOLD) {
-      // Visible centrado
+    } else if (phase < SLIDE_IN + HOLD) {
       dma_display->setCursor(centerX, PANEL_RES_Y - 8);
       dma_display->print(marquee);
-
-    } else if (t < SLIDE_IN + HOLD + SLIDE_OUT) {
-      // Saliendo por la izquierda (ease-in cuadrático)
-      float p = (float)(t - SLIDE_IN - HOLD) / SLIDE_OUT;
-      float ease = p * p;  // ease-in quad
-      x = centerX + (int)((-marqueeW - centerX) * ease);
+    } else if (phase < SLIDE_IN + HOLD + SLIDE_OUT) {
+      float p = (float)(phase - SLIDE_IN - HOLD) / SLIDE_OUT;
+      float ease = p * p;
+      int x = centerX + (int)((-marqueeW - centerX) * ease);
       dma_display->setCursor(x, PANEL_RES_Y - 8);
       dma_display->print(marquee);
-
-    } // else: OFF, no se dibuja nada
+    }
   }
 
   dma_display->flipDMABuffer();
-}
-
-// ─── Debug: forzar datos de clima ─────────────────────
-void debugSetWeather(int code, float temp) {
-  weather.code = code;
-  weather.temp = temp;
-  weather.valid = true;
-  Serial.printf("DEBUG weather: code=%d %.1f°C\n", code, temp);
 }

@@ -9,38 +9,55 @@
 #include "qr_display.h"
 
 #define PANEL_BRIGHTNESS 40
+#define PIN_BOOT         0    // BOOT button en DMDos V3 (pull-up)
+#define RESET_HOLD_MS    3000 // ms para resetear WiFi manteniendo BOOT
+
+// ─── Reset WiFi si se pulsa BOOT al arrancar ──────────
+static void checkHardReset() {
+  pinMode(PIN_BOOT, INPUT_PULLUP);
+  if (digitalRead(PIN_BOOT) == LOW) {
+    Serial.println("BOOT pulsado — limpiando config WiFi...");
+    WiFiManager wm;
+    wm.resetSettings();
+    nvsSaveStr("wifi_ssid", "");
+    nvsSaveStr("wifi_pass", "");
+    Serial.println("Config borrada. Reiniciando...");
+    delay(1000);
+    ESP.restart();
+  }
+}
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n=== RELOJ + CLIMA HUB75 ===");
 
-  // NVS persistente
   nvsInit();
+
+  // Reset WiFi si GPIO0 pulsado al arrancar
+  checkHardReset();
 
   // Display
   initDisplay();
   dma_display->setPanelBrightness(PANEL_BRIGHTNESS);
 
-  // WiFiManager — portal cautivo si no hay credenciales
+  // WiFiManager
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
   wm.setTitle("PixelClock");
+  wm.setConnectTimeout(15);
 
-  // Mostrar QR en el panel mientras espera configuracion
   showQRCode();
 
   if (!wm.autoConnect("PixelClock-AP")) {
-    Serial.println("WiFi: timeout, reiniciando...");
+    Serial.println("WiFi timeout — reiniciando");
     ESP.restart();
   }
-  dma_display->setPanelBrightness(10);
-  showConnecting("Conectando...");
-  delay(500);
 
-  Serial.printf("WiFi: %s (%s)\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+  showConnecting("Conectando...");
+  dma_display->setPanelBrightness(10);
+  delay(500);
 
   // MQTT
   showConnecting("MQTT...");
