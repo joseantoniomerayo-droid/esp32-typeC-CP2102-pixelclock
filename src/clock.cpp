@@ -115,16 +115,12 @@ static uint16_t hsvTo565(int h) {
   return hsvTo565Full(h, 1.0f, 1.0f);
 }
 
-// Gradiente: 0=cian→rojo, 1=amarillo→rojo, ...
+// Gradiente: cian → verde → amarillo → naranja → rojo
+// Las horas en cian/verde contrastan fuerte con el texto gris inferior
 static uint16_t gradientColor(int x, int width) {
-  int tipo = getGradiente();
   float t = (float)x / (float)(width - 1);
-  int h;
-  switch (tipo) {
-    case 0:  h = 180 - (int)(180 * t); break;  // cian→rojo
-    case 1:
-    default: h = 80 - (int)(80 * t);   break;  // amarillo→rojo
-  }
+  // HSV de 180 (cian) a 0 (rojo) con s=1, v=1
+  int h = 180 - (int)(180 * t);
   if (h < 0) h = 0;
   return hsvTo565(h);
 }
@@ -247,12 +243,12 @@ void drawClock() {
     return;
   }
 
-  // ─── Brillo automático: nocturno / diurno ──────────────
+  // ─── Brillo automático ────────────────────────────────
   static int lastBrightness = -1;
-  int noche = getInicioNoche();
-  int manana = getFinNoche();
-  bool esNoche = (t.tm_hour >= noche || t.tm_hour < manana);
-  int targetBrightness = esNoche ? getBrilloNoche() : getBrilloDia();
+  int inicioNoche = nvsLoadInt("inicio_noche", 23);
+  int finNoche = nvsLoadInt("fin_noche", 7);
+  bool esNoche = (t.tm_hour >= inicioNoche || t.tm_hour < finNoche);
+  int targetBrightness = esNoche ? nvsLoadInt("brillo_noche", 1) : nvsLoadInt("brillo_dia", 40);
   if (targetBrightness != lastBrightness) {
     dma_display->setPanelBrightness(targetBrightness);
     lastBrightness = targetBrightness;
