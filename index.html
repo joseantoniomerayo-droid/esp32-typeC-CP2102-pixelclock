@@ -9,30 +9,30 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: system-ui, -apple-system, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; max-width: 480px; margin: 0 auto; }
 
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .header h1 { font-size: 1.5em; }
   .status { font-size: 0.75em; padding: 3px 10px; border-radius: 10px; }
   .on { background: #2ecc71; }
   .off { background: #e74c3c; }
   .connecting { background: #f39c12; }
 
-  .card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-  .card h2 { font-size: 0.85em; text-transform: uppercase; color: #8899cc; margin-bottom: 12px; letter-spacing: 1px; }
+  .card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+  .card h2 { font-size: 0.85em; text-transform: uppercase; color: #8899cc; margin-bottom: 12px; letter-spacing: 1px; cursor: pointer; user-select: none; }
+  .card h2::before { content: '▾ '; }
+  .card.collapsed h2::before { content: '▸ '; }
+  .card.collapsed .body { display: none; }
 
-  .row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .row label { min-width: 60px; font-size: 0.85em; color: #bbb; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .row label { min-width: 55px; font-size: 0.85em; color: #bbb; }
   .row input[type="range"] { flex: 1; accent-color: #4a7cff; }
   .row .val { min-width: 35px; text-align: right; font-weight: bold; color: #4a7cff; font-size: 0.9em; }
+  .row input[type="text"], .row input[type="password"], .row input[type="number"] { flex: 1; background: #0f3460; border: 1px solid #1a4a8a; color: #fff; padding: 8px 10px; border-radius: 8px; font-size: 0.9em; }
+  .row input[type="color"] { flex: 1; height: 40px; background: #0f3460; border: 1px solid #1a4a8a; border-radius: 8px; cursor: pointer; }
+  .row select { flex: 1; background: #0f3460; color: #fff; border: 1px solid #1a4a8a; padding: 8px; border-radius: 8px; }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .grid2 input { background: #0f3460; border: 1px solid #1a4a8a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.9em; width: 100%; }
-  .grid2 input:focus { outline: none; border-color: #4a7cff; }
   .grid2 label { display: block; font-size: 0.75em; color: #667; margin-bottom: 4px; }
-
-  .grad-select { display: flex; gap: 8px; }
-  .grad-select label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85em; color: #ddd; background: #0f3460; padding: 8px 14px; border-radius: 8px; border: 2px solid transparent; }
-  .grad-select label:has(input:checked) { border-color: #4a7cff; }
-  .grad-select input:checked + span { color: #4a7cff; font-weight: bold; }
 
   .status-box { background: #0f3460; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.8em; line-height: 1.6; color: #88aacc; min-height: 50px; }
 
@@ -41,6 +41,7 @@
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .footer { text-align: center; font-size: 0.75em; color: #556; margin-top: 16px; }
+  .mini { font-size: 0.8em; color: #667; margin-top: 8px; display: flex; gap: 8px; align-items: center; }
 </style>
 </head>
 <body>
@@ -50,79 +51,100 @@
   <span id="connStatus" class="status off">Desconectado</span>
 </div>
 
+<!-- Conexion (colapsable) -->
+<div class="card" id="connCard">
+  <h2 onclick="toggleConn()">Conexión MQTT</h2>
+  <div class="body">
+    <div class="row"><label>Servidor</label><input type="text" id="mqttHost" value="192.168.1.59" placeholder="IP:puerto"></div>
+    <div class="row"><label>Usuario</label><input type="text" id="mqttUser" value="pixelclock"></div>
+    <div class="row"><label>Contraseña</label><input type="password" id="mqttPass" value="pixelclock"></div>
+    <button id="connBtn" onclick="toggleConnect()">Conectar</button>
+  </div>
+</div>
+
 <div class="card">
   <h2>Brillo</h2>
-  <div class="row"><label>Día</label><input type="range" id="brilloDia" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloDiaVal">40</span></div>
-  <div class="row"><label>Noche</label><input type="range" id="brilloNoche" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloNocheVal">1</span></div>
+  <div class="body">
+    <div class="row"><label>Día</label><input type="range" id="brilloDia" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloDiaVal">40</span></div>
+    <div class="row"><label>Noche</label><input type="range" id="brilloNoche" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloNocheVal">1</span></div>
+  </div>
 </div>
 
 <div class="card">
   <h2>Horario noche</h2>
-  <div class="grid2">
-    <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23"></div>
-    <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23"></div>
+  <div class="body">
+    <div class="grid2">
+      <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23"></div>
+      <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23"></div>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <h2>Gradiente día</h2>
-  <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
-  <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
+  <div class="body">
+    <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff"></div>
+    <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000"></div>
+  </div>
 </div>
 
 <div class="card">
   <h2>Gradiente noche</h2>
-  <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
-  <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
+  <div class="body">
+    <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0"></div>
+    <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040"></div>
+  </div>
 </div>
 
 <div class="card">
   <h2>Fecha</h2>
-  <div class="row"><label>Formato</label>
-    <select id="formatoFecha" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
-      <option value="0">DD-MM-YYYY</option>
-      <option value="1">DD/MM/YYYY</option>
-      <option value="2">MM-DD-YYYY</option>
-      <option value="3">YYYY-MM-DD</option>
-    </select>
-  </div>
-  <div class="row"><label>Día</label>
-    <select id="mostrarDia" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
-      <option value="1">Mostrar día de la semana</option>
-      <option value="0">Ocultar día</option>
-    </select>
-  </div>
-  <div class="row"><label>Marquee</label>
-    <select id="marqueeActivo" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
-      <option value="1">Animado (entra/sale)</option>
-      <option value="0">Oculto</option>
-    </select>
+  <div class="body">
+    <div class="row"><label>Formato</label>
+      <select id="formatoFecha">
+        <option value="0">DD-MM-YYYY</option>
+        <option value="1">DD/MM/YYYY</option>
+        <option value="2">MM-DD-YYYY</option>
+        <option value="3">YYYY-MM-DD</option>
+      </select>
+    </div>
+    <div class="row"><label>Día</label>
+      <select id="mostrarDia">
+        <option value="1">Mostrar día de la semana</option>
+        <option value="0">Ocultar día</option>
+      </select>
+    </div>
+    <div class="row"><label>Marquee</label>
+      <select id="marqueeActivo">
+        <option value="1">Animado (entra/sale)</option>
+        <option value="0">Oculto</option>
+      </select>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <h2>Clima</h2>
-  <div class="grid2">
-    <div><label>Latitud</label><input type="text" id="climaLat"></div>
-    <div><label>Longitud</label><input type="text" id="climaLon"></div>
+  <div class="body">
+    <div class="grid2">
+      <div><label>Latitud</label><input type="text" id="climaLat"></div>
+      <div><label>Longitud</label><input type="text" id="climaLon"></div>
+    </div>
+    <div class="row" style="margin-top:8px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="upd(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
   </div>
-  <div class="row" style="margin-top:10px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="upd(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
 </div>
 
 <button id="saveBtn" onclick="send()" disabled>Guardar configuración</button>
 
-<div class="card" style="margin-top:12px;">
+<div class="card" style="margin-top:10px;">
   <h2>Estado actual</h2>
-  <div class="status-box" id="statusBox">Esperando conexión...</div>
+  <div class="body">
+    <div class="status-box" id="statusBox">Esperando conexión...</div>
+  </div>
 </div>
 
-<div class="footer" id="lastUpd"></div>
+<div class="mini" id="lastUpd"></div>
 
 <script>
-const BROKER = 'ws://TU_BROKER:9001/mqtt';
-const USER = 'tu_usuario';
-const PASS = 'tu_contraseña';
-
 let client = null;
 
 function upd(el) {
@@ -130,19 +152,38 @@ function upd(el) {
   if (l) l.textContent = el.id === 'climaRefresh' ? el.value + ' min' : el.value;
 }
 
+function toggleConn() {
+  document.getElementById('connCard').classList.toggle('collapsed');
+}
+
 function setStatus(st, txt) {
   const el = document.getElementById('connStatus');
   el.textContent = txt;
   el.className = 'status ' + st;
   document.getElementById('saveBtn').disabled = (st !== 'on');
+  document.getElementById('connBtn').textContent = st === 'on' ? 'Desconectar' : 'Conectar';
+  document.getElementById('connBtn').disabled = false;
+  if (st === 'on') document.getElementById('connCard').classList.add('collapsed');
 }
 
-function connect() {
-  setStatus('connecting', 'Conectando...');
+function toggleConnect() {
+  if (client && client.connected) {
+    client.end(true); client = null;
+    setStatus('off', 'Desconectado');
+    return;
+  }
 
-  client = mqtt.connect(BROKER, {
+  const host = document.getElementById('mqttHost').value;
+  const user = document.getElementById('mqttUser').value;
+  const pass = document.getElementById('mqttPass').value;
+  const url = 'ws://' + host + ':9001/mqtt';
+
+  setStatus('connecting', 'Conectando...');
+  document.getElementById('connBtn').disabled = true;
+
+  client = mqtt.connect(url, {
     clientId: 'pixelclock_ui_' + Math.random().toString(16).substr(2, 8),
-    username: USER, password: PASS, clean: true
+    username: user, password: pass, clean: true
   });
 
   client.on('connect', () => {
@@ -157,22 +198,19 @@ function connect() {
       box.innerHTML = Object.entries(d).map(([k, v]) =>
         `<span style="color:#4a7cff;">${k}</span>: ${v}`
       ).join(' &nbsp; ');
-
       document.getElementById('lastUpd').textContent = 'Última actualización: ' + new Date().toLocaleTimeString();
 
       if (d.brillo_dia !== undefined) setVal('brilloDia', d.brillo_dia);
       if (d.brillo_noche !== undefined) setVal('brilloNoche', d.brillo_noche);
       if (d.inicio_noche !== undefined) document.getElementById('inicioNoche').value = d.inicio_noche;
       if (d.fin_noche !== undefined) document.getElementById('finNoche').value = d.fin_noche;
-      if (d.gradiente !== undefined) document.querySelectorAll('input[name="grad"]').forEach(e => e.checked = e.value == d.gradiente);
-      if (d.gradiente_noche !== undefined) document.querySelectorAll('input[name="gradNoche"]').forEach(e => e.checked = e.value == d.gradiente_noche);
-      if (d.formato_fecha !== undefined) document.getElementById('formatoFecha').value = d.formato_fecha;
-      if (d.mostrar_dia !== undefined) document.getElementById('mostrarDia').value = d.mostrar_dia;
-      if (d.marquee_activo !== undefined) document.getElementById('marqueeActivo').value = d.marquee_activo;
       if (d.grad_ini !== undefined) document.getElementById('gradInicio').value = d.grad_ini;
       if (d.grad_fin !== undefined) document.getElementById('gradFin').value = d.grad_fin;
       if (d.grad_noc_ini !== undefined) document.getElementById('gradNocInicio').value = d.grad_noc_ini;
       if (d.grad_noc_fin !== undefined) document.getElementById('gradNocFin').value = d.grad_noc_fin;
+      if (d.formato_fecha !== undefined) document.getElementById('formatoFecha').value = d.formato_fecha;
+      if (d.mostrar_dia !== undefined) document.getElementById('mostrarDia').value = d.mostrar_dia;
+      if (d.marquee_activo !== undefined) document.getElementById('marqueeActivo').value = d.marquee_activo;
       if (d.clima_lat !== undefined) document.getElementById('climaLat').value = d.clima_lat;
       if (d.clima_lon !== undefined) document.getElementById('climaLon').value = d.clima_lon;
       if (d.clima_refresh !== undefined) setVal('climaRefresh', d.clima_refresh);
@@ -180,7 +218,7 @@ function connect() {
   });
 
   client.on('error', () => setStatus('off', 'Error'));
-  client.on('close', () => setTimeout(connect, 5000));
+  client.on('close', () => { if (client) setStatus('off', 'Desconectado'); });
 }
 
 function setVal(id, v) {
@@ -196,15 +234,13 @@ function send() {
     brillo_noche: +document.getElementById('brilloNoche').value,
     inicio_noche: +document.getElementById('inicioNoche').value,
     fin_noche: +document.getElementById('finNoche').value,
-    gradiente: +document.querySelector('input[name="grad"]:checked').value,
-    gradiente_noche: +document.querySelector('input[name="gradNoche"]:checked').value,
-    formato_fecha: +document.getElementById('formatoFecha').value,
-    mostrar_dia: +document.getElementById('mostrarDia').value,
-    marquee_activo: +document.getElementById('marqueeActivo').value,
     grad_ini: document.getElementById('gradInicio').value,
     grad_fin: document.getElementById('gradFin').value,
     grad_noc_ini: document.getElementById('gradNocInicio').value,
     grad_noc_fin: document.getElementById('gradNocFin').value,
+    formato_fecha: +document.getElementById('formatoFecha').value,
+    mostrar_dia: +document.getElementById('mostrarDia').value,
+    marquee_activo: +document.getElementById('marqueeActivo').value,
     clima_lat: +document.getElementById('climaLat').value,
     clima_lon: +document.getElementById('climaLon').value,
     clima_refresh: +document.getElementById('climaRefresh').value,
@@ -214,8 +250,6 @@ function send() {
   btn.textContent = '✓ Enviado';
   setTimeout(() => { btn.textContent = 'Guardar configuración'; }, 2000);
 }
-
-connect();
 </script>
 </body>
 </html>
