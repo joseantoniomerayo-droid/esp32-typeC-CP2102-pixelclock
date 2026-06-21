@@ -280,10 +280,29 @@ void drawClock() {
   drawWeatherWidget();
 
   // ─── MARQUEE INFERIOR: día + fecha ──────────────────
+  if (!getMarqueeActivo()) { dma_display->flipDMABuffer(); return; }
+
   const char* days[] = {"domingo","lunes","martes","miercoles","jueves","viernes","sabado"};
   char marquee[32];
-  snprintf(marquee, sizeof(marquee), "%s %02d-%02d-%04d",
-           days[t.tm_wday], t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+
+  int fmt = getFormatoFecha();
+  bool mostrarDia = getMostrarDia();
+
+  if (mostrarDia) {
+    switch (fmt) {
+      case 1: snprintf(marquee, sizeof(marquee), "%s %02d/%02d/%04d", days[t.tm_wday], t.tm_mday, t.tm_mon+1, t.tm_year+1900); break;
+      case 2: snprintf(marquee, sizeof(marquee), "%s %02d-%02d-%04d", days[t.tm_wday], t.tm_mon+1, t.tm_mday, t.tm_year+1900); break;
+      case 3: snprintf(marquee, sizeof(marquee), "%s %04d-%02d-%02d", days[t.tm_wday], t.tm_year+1900, t.tm_mon+1, t.tm_mday); break;
+      default: snprintf(marquee, sizeof(marquee), "%s %02d-%02d-%04d", days[t.tm_wday], t.tm_mday, t.tm_mon+1, t.tm_year+1900); break;
+    }
+  } else {
+    switch (fmt) {
+      case 1: snprintf(marquee, sizeof(marquee), "%02d/%02d/%04d", t.tm_mday, t.tm_mon+1, t.tm_year+1900); break;
+      case 2: snprintf(marquee, sizeof(marquee), "%02d-%02d-%04d", t.tm_mon+1, t.tm_mday, t.tm_year+1900); break;
+      case 3: snprintf(marquee, sizeof(marquee), "%04d-%02d-%02d", t.tm_year+1900, t.tm_mon+1, t.tm_mday); break;
+      default: snprintf(marquee, sizeof(marquee), "%02d-%02d-%04d", t.tm_mday, t.tm_mon+1, t.tm_year+1900); break;
+    }
+  }
 
   int marqueeW = strlen(marquee) * 6;
   int centerX = (w - marqueeW) / 2;

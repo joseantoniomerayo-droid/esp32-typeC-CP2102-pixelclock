@@ -82,6 +82,30 @@
 </div>
 
 <div class="card">
+  <h2>Fecha</h2>
+  <div class="row"><label>Formato</label>
+    <select id="formatoFecha" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
+      <option value="0">DD-MM-YYYY</option>
+      <option value="1">DD/MM/YYYY</option>
+      <option value="2">MM-DD-YYYY</option>
+      <option value="3">YYYY-MM-DD</option>
+    </select>
+  </div>
+  <div class="row"><label>Día</label>
+    <select id="mostrarDia" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
+      <option value="1">Mostrar día de la semana</option>
+      <option value="0">Ocultar día</option>
+    </select>
+  </div>
+  <div class="row"><label>Marquee</label>
+    <select id="marqueeActivo" style="flex:1;background:#0f3460;color:#fff;border:1px solid #1a4a8a;padding:8px;border-radius:8px;">
+      <option value="1">Animado (entra/sale)</option>
+      <option value="0">Oculto</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
   <h2>Clima</h2>
   <div class="grid2">
     <div><label>Latitud</label><input type="text" id="climaLat"></div>
@@ -147,6 +171,9 @@ function connect() {
       if (d.fin_noche !== undefined) document.getElementById('finNoche').value = d.fin_noche;
       if (d.gradiente !== undefined) document.querySelectorAll('input[name="grad"]').forEach(e => e.checked = e.value == d.gradiente);
       if (d.gradiente_noche !== undefined) document.querySelectorAll('input[name="gradNoche"]').forEach(e => e.checked = e.value == d.gradiente_noche);
+      if (d.formato_fecha !== undefined) document.getElementById('formatoFecha').value = d.formato_fecha;
+      if (d.mostrar_dia !== undefined) document.getElementById('mostrarDia').value = d.mostrar_dia;
+      if (d.marquee_activo !== undefined) document.getElementById('marqueeActivo').value = d.marquee_activo;
       if (d.clima_lat !== undefined) document.getElementById('climaLat').value = d.clima_lat;
       if (d.clima_lon !== undefined) document.getElementById('climaLon').value = d.clima_lon;
       if (d.clima_refresh !== undefined) setVal('climaRefresh', d.clima_refresh);
@@ -172,6 +199,9 @@ function send() {
     fin_noche: +document.getElementById('finNoche').value,
     gradiente: +document.querySelector('input[name="grad"]:checked').value,
     gradiente_noche: +document.querySelector('input[name="gradNoche"]:checked').value,
+    formato_fecha: +document.getElementById('formatoFecha').value,
+    mostrar_dia: +document.getElementById('mostrarDia').value,
+    marquee_activo: +document.getElementById('marqueeActivo').value,
     clima_lat: +document.getElementById('climaLat').value,
     clima_lon: +document.getElementById('climaLon').value,
     clima_refresh: +document.getElementById('climaRefresh').value,
