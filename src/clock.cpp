@@ -68,6 +68,26 @@ void fetchWeather() {
 
     weather.valid = (tempPos >= 0);
     weather.updated = millis();
+
+    // Ajustar zona horaria desde la respuesta de Open-Meteo
+    int tz = payload.indexOf("\"timezone_abbreviation\":\"");
+    if (tz >= 0) {
+      int s = tz + 25;
+      int e = payload.indexOf('"', s);
+      if (e > s) {
+        String tzStr = payload.substring(s, e);
+        if (tzStr == "GMT+2" || tzStr == "CEST") {
+          setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
+        } else if (tzStr == "GMT" || tzStr == "GMT+0" || tzStr == "GMT+1" || tzStr == "CET") {
+          setenv("TZ", "CET-1", 1);
+        } else if (tzStr == "GMT-5" || tzStr == "EST") {
+          setenv("TZ", "EST+5", 1);
+        } else if (tzStr == "GMT-8" || tzStr == "PST") {
+          setenv("TZ", "PST+8", 1);
+        }
+        tzset();
+      }
+    }
   }
   http.end();
 }
@@ -101,17 +121,27 @@ static uint16_t hsvTo565(int h) {
 }
 
 // Gradiente configurable desde NVS
-static uint16_t gradientColor(int x, int width) {
+// tipos: 0=cian→rojo, 1=amarillo→rojo, 2=sólido azul tenue
+static uint16_t gradientColor(int x, int width, bool esNoche) {
   float t = (float)x / (float)(width - 1);
-  int tipo = getGradiente();
-  int h;
+  int tipo = esNoche ? getGradienteNoche() : getGradiente();
+
   switch (tipo) {
-    case 1:  h = 80 - (int)(80 * t);   break;  // amarillo→rojo
+    case 1: {
+      int h = 80 - (int)(80 * t);
+      if (h < 0) h = 0;
+      return hsvTo565(h);
+    }
+    case 2:
+      // Azul tenue fijo — bueno para noche
+      return dma_display->color565(40, 80, 160);
     case 0:
-    default: h = 180 - (int)(180 * t);  break;  // cian→rojo
+    default: {
+      int h = 180 - (int)(180 * t);
+      if (h < 0) h = 0;
+      return hsvTo565(h);
+    }
   }
-  if (h < 0) h = 0;
-  return hsvTo565(h);
 }
 
 // ─── Iconos clima 8×8 ─────────────────────────────────
@@ -241,7 +271,7 @@ void drawClock() {
   dma_display->setTextSize(3);
   for (int idx = 0; idx < 8; idx++) {
     int charX = idx * 16;
-    dma_display->setTextColor(gradientColor(charX + 8, w));
+    dma_display->setTextColor(gradientColor(charX + 8, w, esNoche));
     dma_display->setCursor(charX, 10);
     dma_display->print(timeStr[idx]);
   }

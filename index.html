@@ -9,252 +9,180 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: system-ui, -apple-system, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; max-width: 480px; margin: 0 auto; }
 
-  h1 { font-size: 1.6em; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
-  .status { font-size: 0.75em; padding: 3px 10px; border-radius: 10px; display: inline-block; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .header h1 { font-size: 1.5em; }
+  .status { font-size: 0.75em; padding: 3px 10px; border-radius: 10px; }
   .on { background: #2ecc71; }
   .off { background: #e74c3c; }
   .connecting { background: #f39c12; }
 
   .card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-  .card h2 { font-size: 0.9em; text-transform: uppercase; color: #8899cc; margin-bottom: 12px; letter-spacing: 1px; }
+  .card h2 { font-size: 0.85em; text-transform: uppercase; color: #8899cc; margin-bottom: 12px; letter-spacing: 1px; }
 
   .row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .row label { min-width: 65px; font-size: 0.85em; color: #bbb; }
+  .row label { min-width: 60px; font-size: 0.85em; color: #bbb; }
   .row input[type="range"] { flex: 1; accent-color: #4a7cff; }
-  .row .val { min-width: 30px; text-align: right; font-size: 0.9em; font-weight: bold; color: #4a7cff; }
-
-  input[type="text"], input[type="number"] { background: #0f3460; border: 1px solid #1a4a8a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.9em; width: 100%; }
-  input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #4a7cff; }
+  .row .val { min-width: 35px; text-align: right; font-weight: bold; color: #4a7cff; font-size: 0.9em; }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid2 input { background: #0f3460; border: 1px solid #1a4a8a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.9em; width: 100%; }
+  .grid2 input:focus { outline: none; border-color: #4a7cff; }
+  .grid2 label { display: block; font-size: 0.75em; color: #667; margin-bottom: 4px; }
 
-  .gradient-options { display: flex; gap: 8px; }
-  .gradient-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85em; color: #ddd; background: #0f3460; padding: 8px 14px; border-radius: 8px; border: 2px solid transparent; }
-  .gradient-options input:checked + span { color: #4a7cff; font-weight: bold; }
-  .gradient-options label:has(input:checked) { border-color: #4a7cff; }
+  .grad-select { display: flex; gap: 8px; }
+  .grad-select label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85em; color: #ddd; background: #0f3460; padding: 8px 14px; border-radius: 8px; border: 2px solid transparent; }
+  .grad-select label:has(input:checked) { border-color: #4a7cff; }
+  .grad-select input:checked + span { color: #4a7cff; font-weight: bold; }
 
-  .status-box { background: #0f3460; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.8em; line-height: 1.6; color: #88aacc; min-height: 60px; }
+  .status-box { background: #0f3460; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.8em; line-height: 1.6; color: #88aacc; min-height: 50px; }
 
   button { background: #4a7cff; color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; width: 100%; }
   button:hover { background: #3a6aee; }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .last-update { text-align: center; font-size: 0.75em; color: #667; margin-top: 16px; }
+  .footer { text-align: center; font-size: 0.75em; color: #556; margin-top: 16px; }
 </style>
 </head>
 <body>
 
-<h1>☀ PixelClock <span id="connectionStatus" class="status off">Desconectado</span></h1>
-<p style="color:#667; margin-bottom:16px; font-size:0.85em;">Configuración remota del reloj LED</p>
-
-<div class="card">
-  <h2>Conexión</h2>
-  <div class="row">
-    <label>Servidor</label>
-    <input type="text" id="mqttHost" value="192.168.1.59" placeholder="IP del broker">
-  </div>
-  <div class="row">
-    <label>Usuario</label>
-    <input type="text" id="mqttUser" value="pixelclock" placeholder="usuario">
-  </div>
-  <div class="row">
-    <label>Contraseña</label>
-    <input type="password" id="mqttPass" value="pixelclock" placeholder="contraseña">
-  </div>
-  <button id="connectBtn" onclick="toggleConnect()">Conectar</button>
+<div class="header">
+  <h1>☀ PixelClock</h1>
+  <span id="connStatus" class="status off">Desconectado</span>
 </div>
 
 <div class="card">
   <h2>Brillo</h2>
-  <div class="row">
-    <label>Día</label>
-    <input type="range" id="brilloDia" min="0" max="255" value="40" oninput="updateSlider(this)">
-    <span class="val" id="brilloDiaVal">40</span>
-  </div>
-  <div class="row">
-    <label>Noche</label>
-    <input type="range" id="brilloNoche" min="0" max="255" value="1" oninput="updateSlider(this)">
-    <span class="val" id="brilloNocheVal">1</span>
-  </div>
+  <div class="row"><label>Día</label><input type="range" id="brilloDia" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloDiaVal">40</span></div>
+  <div class="row"><label>Noche</label><input type="range" id="brilloNoche" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloNocheVal">1</span></div>
 </div>
 
 <div class="card">
   <h2>Horario noche</h2>
   <div class="grid2">
-    <div>
-      <label style="font-size:0.8em; color:#888;">Inicio</label>
-      <input type="number" id="inicioNoche" min="0" max="23" value="23">
-    </div>
-    <div>
-      <label style="font-size:0.8em; color:#888;">Fin</label>
-      <input type="number" id="finNoche" min="0" max="23" value="7">
-    </div>
+    <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23"></div>
+    <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23"></div>
   </div>
 </div>
 
 <div class="card">
   <h2>Gradiente</h2>
-  <div class="gradient-options">
-    <label><input type="radio" name="gradiente" value="0" checked><span>Cian → Rojo</span></label>
-    <label><input type="radio" name="gradiente" value="1"><span>Amarillo → Rojo</span></label>
+  <div class="grad-select">
+    <label><input type="radio" name="grad" value="0"><span>Cian → Rojo</span></label>
+    <label><input type="radio" name="grad" value="1"><span>Amarillo → Rojo</span></label>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Gradiente nocturno</h2>
+  <div class="grad-select">
+    <label><input type="radio" name="gradNoche" value="0"><span>Cian → Rojo</span></label>
+    <label><input type="radio" name="gradNoche" value="1"><span>Amarillo → Rojo</span></label>
+    <label><input type="radio" name="gradNoche" value="2" checked><span>Azul tenue</span></label>
   </div>
 </div>
 
 <div class="card">
   <h2>Clima</h2>
   <div class="grid2">
-    <div>
-      <label style="font-size:0.8em; color:#888;">Latitud</label>
-      <input type="text" id="climaLat" value="40.4168">
-    </div>
-    <div>
-      <label style="font-size:0.8em; color:#888;">Longitud</label>
-      <input type="text" id="climaLon" value="-3.7038">
-    </div>
+    <div><label>Latitud</label><input type="text" id="climaLat"></div>
+    <div><label>Longitud</label><input type="text" id="climaLon"></div>
   </div>
-  <div class="row" style="margin-top:10px;">
-    <label>Refresco</label>
-    <input type="range" id="climaRefresh" min="5" max="120" value="30" oninput="updateSlider(this)">
-    <span class="val" id="climaRefreshVal">30 min</span>
-  </div>
+  <div class="row" style="margin-top:10px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="upd(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
 </div>
 
-<button id="saveBtn" onclick="sendConfig()" disabled>Guardar configuración</button>
+<button id="saveBtn" onclick="send()" disabled>Guardar configuración</button>
 
 <div class="card" style="margin-top:12px;">
   <h2>Estado actual</h2>
-  <div class="status-box" id="statusBox">
-    Esperando conexión...
-  </div>
+  <div class="status-box" id="statusBox">Esperando conexión...</div>
 </div>
 
-<div class="last-update" id="lastUpdate"></div>
+<div class="footer" id="lastUpd"></div>
 
 <script>
+const BROKER = 'ws://192.168.1.59:9001/mqtt';
+const USER = 'pixelclock';
+const PASS = 'pixelclock';
+
 let client = null;
-let connected = false;
 
-function updateSlider(el) {
-  const label = document.getElementById(el.id + 'Val');
-  if (label) {
-    label.textContent = el.id === 'climaRefresh' ? el.value + ' min' : el.value;
-  }
+function upd(el) {
+  const l = document.getElementById(el.id + 'Val');
+  if (l) l.textContent = el.id === 'climaRefresh' ? el.value + ' min' : el.value;
 }
 
-function updateStatusUI(state) {
-  const el = document.getElementById('connectionStatus');
-  if (state === 'connected') {
-    el.textContent = 'Conectado';
-    el.className = 'status on';
-    document.getElementById('connectBtn').textContent = 'Desconectar';
-    document.getElementById('saveBtn').disabled = false;
-  } else if (state === 'connecting') {
-    el.textContent = 'Conectando...';
-    el.className = 'status connecting';
-    document.getElementById('connectBtn').disabled = true;
-  } else {
-    el.textContent = 'Desconectado';
-    el.className = 'status off';
-    document.getElementById('connectBtn').textContent = 'Conectar';
-    document.getElementById('connectBtn').disabled = false;
-    document.getElementById('saveBtn').disabled = true;
-  }
+function setStatus(st, txt) {
+  const el = document.getElementById('connStatus');
+  el.textContent = txt;
+  el.className = 'status ' + st;
+  document.getElementById('saveBtn').disabled = (st !== 'on');
 }
 
-function toggleConnect() {
-  if (connected) {
-    if (client) { client.end(true); client = null; }
-    connected = false;
-    updateStatusUI('disconnected');
-    return;
-  }
+function connect() {
+  setStatus('connecting', 'Conectando...');
 
-  const host = document.getElementById('mqttHost').value;
-  const user = document.getElementById('mqttUser').value;
-  const pass = document.getElementById('mqttPass').value;
-
-  updateStatusUI('connecting');
-
-  const url = 'ws://' + host + ':9001/mqtt';
-  client = mqtt.connect(url, {
+  client = mqtt.connect(BROKER, {
     clientId: 'pixelclock_ui_' + Math.random().toString(16).substr(2, 8),
-    username: user,
-    password: pass,
-    clean: true,
+    username: USER, password: PASS, clean: true
   });
 
   client.on('connect', () => {
-    connected = true;
-    updateStatusUI('connected');
+    setStatus('on', 'Conectado');
     client.subscribe('reloj/status');
-    document.getElementById('statusBox').textContent = 'Esperando datos...';
   });
 
-  client.on('message', (topic, payload) => {
+  client.on('message', (t, p) => {
     try {
-      const data = JSON.parse(payload.toString());
+      const d = JSON.parse(p.toString());
       const box = document.getElementById('statusBox');
-      let html = '';
-      for (const [k, v] of Object.entries(data)) {
-        html += `<span style="color:#4a7cff;">${k}</span>: ${v}  `;
-      }
-      box.innerHTML = html;
-      document.getElementById('lastUpdate').textContent =
-        'Última actualización: ' + new Date().toLocaleTimeString();
+      box.innerHTML = Object.entries(d).map(([k, v]) =>
+        `<span style="color:#4a7cff;">${k}</span>: ${v}`
+      ).join(' &nbsp; ');
 
-      // Precargar valores en la UI
-      if (data.brillo_dia !== undefined) setSlider('brilloDia', data.brillo_dia);
-      if (data.brillo_noche !== undefined) setSlider('brilloNoche', data.brillo_noche);
-      if (data.inicio_noche !== undefined) document.getElementById('inicioNoche').value = data.inicio_noche;
-      if (data.fin_noche !== undefined) document.getElementById('finNoche').value = data.fin_noche;
-      if (data.gradiente !== undefined) {
-        document.querySelectorAll('input[name="gradiente"]').forEach(el => el.checked = el.value == data.gradiente);
-      }
-      if (data.clima_lat !== undefined) document.getElementById('climaLat').value = data.clima_lat;
-      if (data.clima_lon !== undefined) document.getElementById('climaLon').value = data.clima_lon;
-      if (data.clima_refresh !== undefined) setSlider('climaRefresh', data.clima_refresh);
-    } catch(e) {
-      document.getElementById('statusBox').textContent = 'Error: ' + e.message;
-    }
+      document.getElementById('lastUpd').textContent = 'Última actualización: ' + new Date().toLocaleTimeString();
+
+      if (d.brillo_dia !== undefined) setVal('brilloDia', d.brillo_dia);
+      if (d.brillo_noche !== undefined) setVal('brilloNoche', d.brillo_noche);
+      if (d.inicio_noche !== undefined) document.getElementById('inicioNoche').value = d.inicio_noche;
+      if (d.fin_noche !== undefined) document.getElementById('finNoche').value = d.fin_noche;
+      if (d.gradiente !== undefined) document.querySelectorAll('input[name="grad"]').forEach(e => e.checked = e.value == d.gradiente);
+      if (d.gradiente_noche !== undefined) document.querySelectorAll('input[name="gradNoche"]').forEach(e => e.checked = e.value == d.gradiente_noche);
+      if (d.clima_lat !== undefined) document.getElementById('climaLat').value = d.clima_lat;
+      if (d.clima_lon !== undefined) document.getElementById('climaLon').value = d.clima_lon;
+      if (d.clima_refresh !== undefined) setVal('climaRefresh', d.clima_refresh);
+    } catch(e) { document.getElementById('statusBox').textContent = 'Error: ' + e.message; }
   });
 
-  client.on('error', (err) => {
-    document.getElementById('statusBox').textContent = 'Error MQTT: ' + err.message;
-    connected = false;
-    updateStatusUI('disconnected');
-  });
-
-  client.on('close', () => {
-    connected = false;
-    updateStatusUI('disconnected');
-  });
+  client.on('error', () => setStatus('off', 'Error'));
+  client.on('close', () => setTimeout(connect, 5000));
 }
 
-function setSlider(id, val) {
+function setVal(id, v) {
   const el = document.getElementById(id);
-  el.value = val;
-  updateSlider(el);
+  el.value = v;
+  upd(el);
 }
 
-function sendConfig() {
-  if (!client || !connected) return;
-
-  const config = {
-    brillo_dia: parseInt(document.getElementById('brilloDia').value),
-    brillo_noche: parseInt(document.getElementById('brilloNoche').value),
-    inicio_noche: parseInt(document.getElementById('inicioNoche').value),
-    fin_noche: parseInt(document.getElementById('finNoche').value),
-    gradiente: parseInt(document.querySelector('input[name="gradiente"]:checked').value),
-    clima_lat: parseFloat(document.getElementById('climaLat').value),
-    clima_lon: parseFloat(document.getElementById('climaLon').value),
-    clima_refresh: parseInt(document.getElementById('climaRefresh').value),
+function send() {
+  if (!client || !client.connected) return;
+  const cfg = {
+    brillo_dia: +document.getElementById('brilloDia').value,
+    brillo_noche: +document.getElementById('brilloNoche').value,
+    inicio_noche: +document.getElementById('inicioNoche').value,
+    fin_noche: +document.getElementById('finNoche').value,
+    gradiente: +document.querySelector('input[name="grad"]:checked').value,
+    gradiente_noche: +document.querySelector('input[name="gradNoche"]:checked').value,
+    clima_lat: +document.getElementById('climaLat').value,
+    clima_lon: +document.getElementById('climaLon').value,
+    clima_refresh: +document.getElementById('climaRefresh').value,
   };
-
-  client.publish('reloj/config', JSON.stringify(config));
-  document.getElementById('saveBtn').textContent = '✓ Enviado';
-  setTimeout(() => { document.getElementById('saveBtn').textContent = 'Guardar configuración'; }, 2000);
+  client.publish('reloj/config', JSON.stringify(cfg));
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✓ Enviado';
+  setTimeout(() => { btn.textContent = 'Guardar configuración'; }, 2000);
 }
-</script>
 
+connect();
+</script>
 </body>
 </html>
