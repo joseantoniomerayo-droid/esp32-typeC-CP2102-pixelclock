@@ -11,6 +11,11 @@ static const char* CHAR_STS_UUID = "fb349b5f-8000-0080-0010-0000e2ff0000";
 
 static NimBLECharacteristic* pStatusChar = nullptr;
 
+// ─── PIN de seguridad (NVS) ────────────────────────────
+static const char* PIN_KEY = "ble_pin";
+static const char* PIN_DEF = "0000";
+static bool authenticated = false;
+
 // ─── Variables de WiFi (desde NVS) ─────────────────────
 static char wifi_ssid[32] = "";
 static char wifi_pass[64] = "";
@@ -18,7 +23,7 @@ static char wifi_pass[64] = "";
 // ─── Prototipos ────────────────────────────────────────
 static void reconnectWiFi();
 
-// ─── Envía respuesta por BLE ───────────────────────────
+// ─── Envía respuesta por BLE (notify) ──────────────────
 static void sendBLE(const char* msg) {
   if (pStatusChar) {
     pStatusChar->setValue(msg);
@@ -30,17 +35,55 @@ static void sendBLE(const char* msg) {
 static void processCmd(const char* cmd) {
   Serial.printf("[BLE] CMD: '%s'\n", cmd);
 
+  // ── pin:XXXX  — autenticarse ─────────────────────────
+  if (strncmp(cmd, "pin:", 4) == 0) {
+    String stored = nvsLoadStr(PIN_KEY, PIN_DEF);
+    if (strcmp(cmd + 4, stored.c_str()) == 0) {
+      authenticated = true;
+      sendBLE("OK: authenticated");
+    } else {
+      sendBLE("ERROR: PIN incorrecto");
+    }
+    return;
+  }
+
+  // ── pin_nuevo:OLD,NEW  — cambiar PIN ────────────────
+  if (strncmp(cmd, "pin_nuevo:", 10) == 0) {
+    char old[16], newpin[16];
+    if (sscanf(cmd, "pin_nuevo:%15[^,],%15s", old, newpin) == 2) {
+      String stored = nvsLoadStr(PIN_KEY, PIN_DEF);
+      if (strcmp(old, stored.c_str()) == 0) {
+        nvsSaveStr(PIN_KEY, newpin);
+        authenticated = false;
+        sendBLE("OK: PIN cambiado");
+      } else {
+        sendBLE("ERROR: PIN actual incorrecto");
+      }
+    } else {
+      sendBLE("ERROR: formato pin_nuevo:OLD,NEW");
+    }
+    return;
+  }
+
+  // ── status — siempre responde (indica si auth o no) ─
   if (strcmp(cmd, "status") == 0) {
     char buf[256];
     snprintf(buf, sizeof(buf),
-      "{\"brillo_dia\":%d,\"brillo_noche\":%d,"
+      "{\"ok\":%s,\"brillo_dia\":%d,\"brillo_noche\":%d,"
       "\"inicio_noche\":%d,\"fin_noche\":%d,"
       "\"gradiente\":%d,\"clima_refresh\":%d"
       "}",
+      authenticated ? "true" : "false",
       getBrilloDia(), getBrilloNoche(),
       getInicioNoche(), getFinNoche(),
       getGradiente(), getClimaRefresh());
     sendBLE(buf);
+    return;
+  }
+
+  // ── Resto de comandos: requieren autenticación ──────
+  if (!authenticated) {
+    sendBLE("ERROR: auth required — envie pin:XXXX");
     return;
   }
 
@@ -118,12 +161,10 @@ class CmdCallback : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic* pChar) {
     std::string val = pChar->getValue();
     if (val.length() > 0) {
-      // Copiar y trim
       char buf[128];
       size_t len = val.length() < sizeof(buf)-1 ? val.length() : sizeof(buf)-1;
       memcpy(buf, val.data(), len);
       buf[len] = '\0';
-      // Trim \r\n
       while (len > 0 && (buf[len-1]=='\n'||buf[len-1]=='\r'||buf[len-1]==' '))
         buf[--len] = '\0';
       processCmd(buf);
@@ -174,14 +215,15 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   }
   void onDisconnect(NimBLEServer* pServer) {
     Serial.println("[BLE] Desconectado — reanunciando");
+    authenticated = false;  // desautenticar al desconectar
     NimBLEDevice::startAdvertising();
   }
 };
 
 // ─── Init BLE ──────────────────────────────────────────
 void initBLE() {
-  NimBLEDevice::init("PixelClock");       // nombre visible
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9); // potencia máxima
+  NimBLEDevice::init("PixelClock");
+  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
   NimBLEServer* server = NimBLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
@@ -209,8 +251,8 @@ void initBLE() {
   adv->setAppearance(0x0000);
   adv->start();
 
-  Serial.println("[BLE] PixelClock anunciado");
+  Serial.println("[BLE] PixelClock anunciado (PIN por defecto: 0000)");
 
-  // Conectar WiFi si hay credenciales
+  // Conectar WiFi si hay credenciales en NVS
   connectWiFi();
 }
