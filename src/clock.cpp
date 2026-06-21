@@ -256,7 +256,7 @@ void drawClock() {
 
   // ─── Brillo automático: nocturno (23-7) / diurno ────────
   static int lastBrightness = -1;
-  int targetBrightness = (t.tm_hour >= 23 || t.tm_hour < 7) ? 5 : 40;
+  int targetBrightness = (t.tm_hour >= 23 || t.tm_hour < 7) ? 1 : 40;
   if (targetBrightness != lastBrightness) {
     dma_display->setPanelBrightness(targetBrightness);
     lastBrightness = targetBrightness;
