@@ -11,17 +11,47 @@
 #define PANEL_BRIGHTNESS 40
 #define PIN_BOOT         0
 
-// ─── Reset WiFi si se pulsa BOOT al arrancar ──────────
-static void checkHardReset() {
+// ─── Reset WiFi manteniendo BOOT 5s durante operacion ──
+static void checkFactoryReset() {
   pinMode(PIN_BOOT, INPUT_PULLUP);
+  delay(50);
   if (digitalRead(PIN_BOOT) == LOW) {
+    unsigned long t = millis();
+    // Mostrar cuenta atras en panel
+    dma_display->fillScreen(0);
+    dma_display->setTextSize(1);
+    dma_display->setTextColor(dma_display->color565(255,200,0));
+    dma_display->setCursor(10, 8);
+    dma_display->print("BOOT pulsado");
+    dma_display->setCursor(10, 18);
+    dma_display->print("Manten 5s para reset");
+    dma_display->flipDMABuffer();
+
+    while (digitalRead(PIN_BOOT) == LOW && millis() - t < 5000) {
+      delay(100);
+    }
+
+    if (digitalRead(PIN_BOOT) == HIGH) {
+      return;  // solto antes de tiempo
+    }
+
+    // 5s alcanzados, resetear
+    dma_display->fillScreen(0);
+    dma_display->setCursor(10, 12);
+    dma_display->setTextColor(dma_display->color565(255,80,80));
+    dma_display->print("Reseteando...");
+    dma_display->flipDMABuffer();
+
     WiFiManager wm;
     wm.resetSettings();
     nvsSaveStr("mqtt_host", "");
     nvsSaveStr("mqtt_user", "");
     nvsSaveStr("mqtt_pass", "");
     nvsSaveInt("mqtt_port", 1883);
-    Serial.println("Reset completo — reiniciando");
+    Serial.println("Factory reset — reiniciando");
+
+    while (digitalRead(PIN_BOOT) == LOW) delay(100);
+    delay(500);
     ESP.restart();
   }
 }
@@ -30,10 +60,7 @@ void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
 
   Serial.begin(115200);
-  delay(500);
-
   nvsInit();
-  checkHardReset();
 
   // Display
   initDisplay();
@@ -100,5 +127,13 @@ void setup() {
 void loop() {
   mqttLoop();
   drawClock();
+
+  // Comprobar BOOT cada ~500ms para factory reset
+  static unsigned long lastBootCheck = 0;
+  if (millis() - lastBootCheck > 500) {
+    lastBootCheck = millis();
+    checkFactoryReset();
+  }
+
   delay(10);
 }
