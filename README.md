@@ -74,6 +74,8 @@ const PASS = 'tu_contraseña';
 ```
 
 **Secciones de la interfaz:**
+
+| Sección | Parámetros |
 |---|---|
 | **Brillo** | Día (0–255), Noche (0–255) |
 | **Horario noche** | Hora de inicio y fin del modo nocturno |
