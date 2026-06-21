@@ -68,6 +68,8 @@ void setColorFin(bool noche, uint32_t rgb) {
   nvsSaveStr(noche ? "grad_noc_fin" : "grad_fin", rgbToHex(rgb).c_str());
 }
 void setClimaRefresh(int v) { nvsSaveInt("clima_refresh", v); }
+int getTopRotacion()  { return nvsLoadInt("top_rotacion", DEF_TOP_ROTACION); }
+void setTopRotacion(int v) { nvsSaveInt("top_rotacion", v); }
 
 void setLatitud(float v) {
   char buf[16]; snprintf(buf, sizeof(buf), "%.4f", v); nvsSaveStr("clima_lat", buf);

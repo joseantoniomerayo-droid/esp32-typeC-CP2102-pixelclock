@@ -47,6 +47,7 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (doc.containsKey("clima_refresh")) setClimaRefresh(doc["clima_refresh"]);
   if (doc.containsKey("clima_lat"))     setLatitud(doc["clima_lat"]);
   if (doc.containsKey("clima_lon"))     setLongitud(doc["clima_lon"]);
+  if (doc.containsKey("top_rotacion"))  setTopRotacion(doc["top_rotacion"]);
 
   mqttPublishStatus();
 }
@@ -55,7 +56,7 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
 void mqttPublishStatus() {
   if (!mqttClient.connected()) return;
 
-  char buf[384];
+  char buf[512];
   snprintf(buf, sizeof(buf),
     "{\"brillo_dia\":%d,\"brillo_noche\":%d,"
     "\"inicio_noche\":%d,\"fin_noche\":%d,"
@@ -63,13 +64,13 @@ void mqttPublishStatus() {
     "\"grad_ini\":\"#%06X\",\"grad_fin\":\"#%06X\","
     "\"grad_noc_ini\":\"#%06X\",\"grad_noc_fin\":\"#%06X\","
     "\"clima_refresh\":%d,"
-    "\"clima_lat\":%.4f,\"clima_lon\":%.4f}",
+    "\"clima_lat\":%.4f,\"clima_lon\":%.4f,\"top_rotacion\":%d}",
     getBrilloDia(), getBrilloNoche(),
     getInicioNoche(), getFinNoche(),
     getGradiente(), getGradienteNoche(), getFormatoFecha(), getMostrarDia()?1:0, getMarqueeActivo()?1:0,
     getColorInicio(false), getColorFin(false),
     getColorInicio(true), getColorFin(true), getClimaRefresh(),
-    getLatitud(), getLongitud());
+    getLatitud(), getLongitud(), getTopRotacion());
 
   mqttClient.publish("reloj/status", buf, true);
 }
