@@ -4,7 +4,7 @@
 #include <HTTPClient.h>
 #include "clock.h"
 #include "display.h"
-#include "credentials.h"
+#include "nvs_config.h"
 
 // ─── Config ────────────────────────────────────────────
 struct Weather {
@@ -16,20 +16,7 @@ struct Weather {
 static Weather weather = {0, 0, false, 0};
 
 static unsigned long lastWeatherFetch = 0;
-const unsigned long WEATHER_INTERVAL = 30UL * 60 * 1000;
-
-// ─── WiFi ──────────────────────────────────────────────
-void initWiFi() {
-  Serial.printf("WiFi: %s ... ", WIFI_SSID);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  int a = 0;
-  while (WiFi.status() != WL_CONNECTED && a < 40) { delay(500); Serial.print("."); a++; }
-  if (WiFi.status() == WL_CONNECTED)
-    Serial.printf("\nIP: %s\n", WiFi.localIP().toString().c_str());
-  else
-    Serial.println("\nFAIL");
-}
+static unsigned long weatherInterval = 0;  // se actualiza cada vez
 
 // ─── NTP ───────────────────────────────────────────────
 bool syncNTP() {
@@ -55,8 +42,9 @@ void fetchWeather() {
   char url[256];
   snprintf(url, sizeof(url),
     "http://api.open-meteo.com/v1/forecast"
-    "?latitude=40.4168&longitude=-3.7038"
-    "&current_weather=true&timezone=auto");
+    "?latitude=%.4f&longitude=%.4f"
+    "&current_weather=true&timezone=auto",
+    getLatitud(), getLongitud());
 
   if (!http.begin(url)) {
     Serial.println("Weather: begin fail");
@@ -127,12 +115,16 @@ static uint16_t hsvTo565(int h) {
   return hsvTo565Full(h, 1.0f, 1.0f);
 }
 
-// Gradiente: cian → verde → amarillo → naranja → rojo
-// Las horas en cian/verde contrastan fuerte con el texto gris inferior
+// Gradiente: 0=cian→rojo, 1=amarillo→rojo, ...
 static uint16_t gradientColor(int x, int width) {
+  int tipo = getGradiente();
   float t = (float)x / (float)(width - 1);
-  // HSV de 180 (cian) a 0 (rojo) con s=1, v=1
-  int h = 180 - (int)(180 * t);
+  int h;
+  switch (tipo) {
+    case 0:  h = 180 - (int)(180 * t); break;  // cian→rojo
+    case 1:
+    default: h = 80 - (int)(80 * t);   break;  // amarillo→rojo
+  }
   if (h < 0) h = 0;
   return hsvTo565(h);
 }
@@ -232,9 +224,10 @@ void drawClock() {
   if (millis() - lastDraw < 60) return;  // ~16 fps como el original
   lastDraw = millis();
 
-  // Weather refresh cada 30 min
+  // Weather refresh
+  weatherInterval = (unsigned long)getClimaRefresh() * 60 * 1000;
   if (WiFi.status() == WL_CONNECTED &&
-      (millis() - lastWeatherFetch > WEATHER_INTERVAL || !weather.valid)) {
+      (millis() - lastWeatherFetch > weatherInterval || !weather.valid)) {
     fetchWeather();
     lastWeatherFetch = millis();
   }
@@ -254,9 +247,12 @@ void drawClock() {
     return;
   }
 
-  // ─── Brillo automático: nocturno (23-7) / diurno ────────
+  // ─── Brillo automático: nocturno / diurno ──────────────
   static int lastBrightness = -1;
-  int targetBrightness = (t.tm_hour >= 23 || t.tm_hour < 7) ? 1 : 40;
+  int noche = getInicioNoche();
+  int manana = getFinNoche();
+  bool esNoche = (t.tm_hour >= noche || t.tm_hour < manana);
+  int targetBrightness = esNoche ? getBrilloNoche() : getBrilloDia();
   if (targetBrightness != lastBrightness) {
     dma_display->setPanelBrightness(targetBrightness);
     lastBrightness = targetBrightness;

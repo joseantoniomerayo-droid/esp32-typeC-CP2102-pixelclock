@@ -2,6 +2,8 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "display.h"
+#include "nvs_config.h"
+#include "ble_config.h"
 #include "clock.h"
 
 #define PANEL_BRIGHTNESS 40
@@ -13,14 +15,19 @@ void setup() {
   delay(500);
   Serial.println("\n=== RELOJ + CLIMA HUB75 ===");
 
+  // NVS persistente
+  nvsInit();
+
+  // BLE + WiFi (intenta conectar si hay credenciales en NVS)
+  initBLE();
+
+  // Display
   initDisplay();
   dma_display->setPanelBrightness(10);
   delay(1000);
   dma_display->setPanelBrightness(PANEL_BRIGHTNESS);
 
-  showConnecting("WiFi...");
-  initWiFi();
-
+  // NTP
   showConnecting("NTP...");
   syncNTP();
 
