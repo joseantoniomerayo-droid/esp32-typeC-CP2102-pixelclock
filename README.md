@@ -54,11 +54,26 @@ configuración por WiFiManager + Web UI vía MQTT.
 Durante el funcionamiento normal, pulsa y mantén el botón **BOOT** durante **5 segundos**.
 El panel mostrará la cuenta atrás y el ESP32 se reiniciará borrando toda la configuración.
 
-### Web UI (http://192.168.1.59)
-Interfaz web que conecta directamente al broker MQTT por WebSocket.
+### Web UI
+
+Interfaz web que conecta al broker MQTT por WebSocket (puerto 9001).
 No requiere backend — solo HTML + JavaScript.
 
-| Sección | Parámetros |
+Para usarla, copia `index.html` al servidor web (Nginx en la VM del broker):
+
+```bash
+sudo cp index.html /var/www/html/index.html
+```
+
+Si tu broker está en otra IP, edita las constantes al inicio del `<script>` en `index.html`:
+
+```javascript
+const BROKER = 'ws://192.168.1.59:9001/mqtt';
+const USER = 'pixelclock';
+const PASS = 'pixelclock';
+```
+
+**Secciones de la interfaz:**
 |---|---|
 | **Brillo** | Día (0–255), Noche (0–255) |
 | **Horario noche** | Hora de inicio y fin del modo nocturno |
