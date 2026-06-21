@@ -100,10 +100,16 @@ static uint16_t hsvTo565(int h) {
   return hsvTo565Full(h, 1.0f, 1.0f);
 }
 
-// Gradiente: cian → verde → amarillo → naranja → rojo
+// Gradiente configurable desde NVS
 static uint16_t gradientColor(int x, int width) {
   float t = (float)x / (float)(width - 1);
-  int h = 180 - (int)(180 * t);
+  int tipo = getGradiente();
+  int h;
+  switch (tipo) {
+    case 1:  h = 80 - (int)(80 * t);   break;  // amarillo→rojo
+    case 0:
+    default: h = 180 - (int)(180 * t);  break;  // cian→rojo
+  }
   if (h < 0) h = 0;
   return hsvTo565(h);
 }
