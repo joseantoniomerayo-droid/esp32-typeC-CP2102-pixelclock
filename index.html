@@ -65,20 +65,15 @@
 </div>
 
 <div class="card">
-  <h2>Gradiente</h2>
-  <div class="grad-select">
-    <label><input type="radio" name="grad" value="0"><span>Cian → Rojo</span></label>
-    <label><input type="radio" name="grad" value="1"><span>Amarillo → Rojo</span></label>
-  </div>
+  <h2>Gradiente día</h2>
+  <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
+  <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
 </div>
 
 <div class="card">
-  <h2>Gradiente nocturno</h2>
-  <div class="grad-select">
-    <label><input type="radio" name="gradNoche" value="0"><span>Cian → Rojo</span></label>
-    <label><input type="radio" name="gradNoche" value="1"><span>Amarillo → Rojo</span></label>
-    <label><input type="radio" name="gradNoche" value="2" checked><span>Azul tenue</span></label>
-  </div>
+  <h2>Gradiente noche</h2>
+  <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
+  <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040" style="flex:1;height:40px;background:#0f3460;border:1px solid #1a4a8a;border-radius:8px;cursor:pointer;"></div>
 </div>
 
 <div class="card">
@@ -174,6 +169,10 @@ function connect() {
       if (d.formato_fecha !== undefined) document.getElementById('formatoFecha').value = d.formato_fecha;
       if (d.mostrar_dia !== undefined) document.getElementById('mostrarDia').value = d.mostrar_dia;
       if (d.marquee_activo !== undefined) document.getElementById('marqueeActivo').value = d.marquee_activo;
+      if (d.grad_ini !== undefined) document.getElementById('gradInicio').value = d.grad_ini;
+      if (d.grad_fin !== undefined) document.getElementById('gradFin').value = d.grad_fin;
+      if (d.grad_noc_ini !== undefined) document.getElementById('gradNocInicio').value = d.grad_noc_ini;
+      if (d.grad_noc_fin !== undefined) document.getElementById('gradNocFin').value = d.grad_noc_fin;
       if (d.clima_lat !== undefined) document.getElementById('climaLat').value = d.clima_lat;
       if (d.clima_lon !== undefined) document.getElementById('climaLon').value = d.clima_lon;
       if (d.clima_refresh !== undefined) setVal('climaRefresh', d.clima_refresh);
@@ -202,6 +201,10 @@ function send() {
     formato_fecha: +document.getElementById('formatoFecha').value,
     mostrar_dia: +document.getElementById('mostrarDia').value,
     marquee_activo: +document.getElementById('marqueeActivo').value,
+    grad_ini: document.getElementById('gradInicio').value,
+    grad_fin: document.getElementById('gradFin').value,
+    grad_noc_ini: document.getElementById('gradNocInicio').value,
+    grad_noc_fin: document.getElementById('gradNocFin').value,
     clima_lat: +document.getElementById('climaLat').value,
     clima_lon: +document.getElementById('climaLon').value,
     clima_refresh: +document.getElementById('climaRefresh').value,

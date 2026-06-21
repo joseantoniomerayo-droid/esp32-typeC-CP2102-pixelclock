@@ -40,6 +40,10 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (doc.containsKey("formato_fecha"))   setFormatoFecha(doc["formato_fecha"]);
   if (doc.containsKey("mostrar_dia"))    setMostrarDia(doc["mostrar_dia"]);
   if (doc.containsKey("marquee_activo")) setMarqueeActivo(doc["marquee_activo"]);
+  if (doc.containsKey("grad_ini")) setColorInicio(false, strtoul(((const char*)doc["grad_ini"])+1, NULL, 16));
+  if (doc.containsKey("grad_fin")) setColorFin(false, strtoul(((const char*)doc["grad_fin"])+1, NULL, 16));
+  if (doc.containsKey("grad_noc_ini")) setColorInicio(true, strtoul(((const char*)doc["grad_noc_ini"])+1, NULL, 16));
+  if (doc.containsKey("grad_noc_fin")) setColorFin(true, strtoul(((const char*)doc["grad_noc_fin"])+1, NULL, 16));
   if (doc.containsKey("clima_refresh")) setClimaRefresh(doc["clima_refresh"]);
   if (doc.containsKey("clima_lat"))     setLatitud(doc["clima_lat"]);
   if (doc.containsKey("clima_lon"))     setLongitud(doc["clima_lon"]);
@@ -55,11 +59,16 @@ void mqttPublishStatus() {
   snprintf(buf, sizeof(buf),
     "{\"brillo_dia\":%d,\"brillo_noche\":%d,"
     "\"inicio_noche\":%d,\"fin_noche\":%d,"
-    "\"gradiente\":%d,\"gradiente_noche\":%d,\"formato_fecha\":%d,\"mostrar_dia\":%d,\"marquee_activo\":%d,\"clima_refresh\":%d,"
+    "\"gradiente\":%d,\"gradiente_noche\":%d,\"formato_fecha\":%d,\"mostrar_dia\":%d,\"marquee_activo\":%d,"
+    "\"grad_ini\":\"#%06X\",\"grad_fin\":\"#%06X\","
+    "\"grad_noc_ini\":\"#%06X\",\"grad_noc_fin\":\"#%06X\","
+    "\"clima_refresh\":%d,"
     "\"clima_lat\":%.4f,\"clima_lon\":%.4f}",
     getBrilloDia(), getBrilloNoche(),
     getInicioNoche(), getFinNoche(),
-    getGradiente(), getGradienteNoche(), getFormatoFecha(), getMostrarDia()?1:0, getMarqueeActivo()?1:0, getClimaRefresh(),
+    getGradiente(), getGradienteNoche(), getFormatoFecha(), getMostrarDia()?1:0, getMarqueeActivo()?1:0,
+    getColorInicio(false), getColorFin(false),
+    getColorInicio(true), getColorFin(true), getClimaRefresh(),
     getLatitud(), getLongitud());
 
   mqttClient.publish("reloj/status", buf, true);

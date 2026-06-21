@@ -20,6 +20,27 @@ int getGradienteNoche() { return nvsLoadInt("gradiente_noche", 2); }
 int getFormatoFecha()  { return nvsLoadInt("formato_fecha", 0); }
 bool getMostrarDia()   { return nvsLoadInt("mostrar_dia", 1); }
 bool getMarqueeActivo(){ return nvsLoadInt("marquee_activo", 1); }
+
+// Color helpers: almacenados como "RRGGBB" en NVS
+static uint32_t hexToRgb(const String& hex) {
+  if (hex.length() < 6) return 0;
+  return strtoul(hex.c_str(), NULL, 16);
+}
+static String rgbToHex(uint32_t rgb) {
+  char buf[8]; snprintf(buf, sizeof(buf), "%06X", rgb); return String(buf);
+}
+
+uint32_t getColorInicio(bool noche) {
+  const char* key = noche ? "grad_noc_ini" : "grad_ini";
+  const char* def = noche ? "2850A0" : "00B4FF";
+  return hexToRgb(nvsLoadStr(key, def));
+}
+uint32_t getColorFin(bool noche) {
+  const char* key = noche ? "grad_noc_fin" : "grad_fin";
+  const char* def = noche ? "102040" : "FF0000";
+  return hexToRgb(nvsLoadStr(key, def));
+}
+
 int getClimaRefresh() { return nvsLoadInt("clima_refresh", DEF_CLIMA_REFRESH); }
 
 float getLatitud() {
@@ -40,6 +61,12 @@ void setGradienteNoche(int v) { nvsSaveInt("gradiente_noche", v); }
 void setFormatoFecha(int v)  { nvsSaveInt("formato_fecha", v); }
 void setMostrarDia(bool v)   { nvsSaveInt("mostrar_dia", v); }
 void setMarqueeActivo(bool v){ nvsSaveInt("marquee_activo", v); }
+void setColorInicio(bool noche, uint32_t rgb) {
+  nvsSaveStr(noche ? "grad_noc_ini" : "grad_ini", rgbToHex(rgb).c_str());
+}
+void setColorFin(bool noche, uint32_t rgb) {
+  nvsSaveStr(noche ? "grad_noc_fin" : "grad_fin", rgbToHex(rgb).c_str());
+}
 void setClimaRefresh(int v) { nvsSaveInt("clima_refresh", v); }
 
 void setLatitud(float v) {

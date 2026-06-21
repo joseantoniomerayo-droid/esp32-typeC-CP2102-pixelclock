@@ -120,28 +120,18 @@ static uint16_t hsvTo565(int h) {
   return hsvTo565Full(h, 1.0f, 1.0f);
 }
 
-// Gradiente configurable desde NVS
-// tipos: 0=cian→rojo, 1=amarillo→rojo, 2=sólido azul tenue
+// Gradiente por interpolacion entre dos colores configurados en NVS
+// formato: RRGGBB hex. Si inicio==fin, color solido.
 static uint16_t gradientColor(int x, int width, bool esNoche) {
+  uint32_t cStart = getColorInicio(esNoche);
+  uint32_t cEnd   = getColorFin(esNoche);
   float t = (float)x / (float)(width - 1);
-  int tipo = esNoche ? getGradienteNoche() : getGradiente();
 
-  switch (tipo) {
-    case 1: {
-      int h = 80 - (int)(80 * t);
-      if (h < 0) h = 0;
-      return hsvTo565(h);
-    }
-    case 2:
-      // Azul tenue fijo — bueno para noche
-      return dma_display->color565(40, 80, 160);
-    case 0:
-    default: {
-      int h = 180 - (int)(180 * t);
-      if (h < 0) h = 0;
-      return hsvTo565(h);
-    }
-  }
+  uint8_t r = ((cStart >> 16) & 0xFF) * (1.0f - t) + ((cEnd >> 16) & 0xFF) * t;
+  uint8_t g = ((cStart >> 8)  & 0xFF) * (1.0f - t) + ((cEnd >> 8)  & 0xFF) * t;
+  uint8_t b = (cStart        & 0xFF) * (1.0f - t) + (cEnd        & 0xFF) * t;
+
+  return dma_display->color565(r, g, b);
 }
 
 // ─── Iconos clima 8×8 ─────────────────────────────────
