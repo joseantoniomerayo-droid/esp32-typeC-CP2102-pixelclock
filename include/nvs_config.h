@@ -9,7 +9,6 @@
 #define DEF_LAT           "40.4168"
 #define DEF_LON           "-3.7038"
 #define DEF_CLIMA_REFRESH 30
-#define DEF_TOP_ROTACION   10  // segundos entre rotacion clima/fecha
 
 void  nvsInit();
 void  nvsSaveStr(const char* key, const char* val);
@@ -31,7 +30,6 @@ uint32_t getColorFin(bool noche);
 float getLatitud();
 float getLongitud();
 int   getClimaRefresh();
-int   getTopRotacion();
 
 void  setBrilloDia(int v);
 void  setBrilloNoche(int v);
@@ -47,4 +45,3 @@ void  setColorFin(bool noche, uint32_t rgb);
 void  setLatitud(float v);
 void  setLongitud(float v);
 void  setClimaRefresh(int v);
-void  setTopRotacion(int v);

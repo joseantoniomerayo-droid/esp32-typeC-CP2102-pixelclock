@@ -119,7 +119,6 @@
         <option value="0">Oculto</option>
       </select>
     </div>
-    <div class="row"><label>Rotación</label><input type="range" id="topRotacion" min="3" max="60" value="10" oninput="dirty(this)"><span class="val" id="topRotacionVal">10 s</span></div>
   </div>
 </div>
 
@@ -158,12 +157,11 @@ const FIELD_MAP = {
   formatoFecha: 'formato_fecha', mostrarDia: 'mostrar_dia',
   marqueeActivo: 'marquee_activo',
   climaLat: 'clima_lat', climaLon: 'clima_lon', climaRefresh: 'clima_refresh',
-  topRotacion: 'top_rotacion',
 };
 
 function upd(el) {
   const l = document.getElementById(el.id + 'Val');
-  if (l) l.textContent = el.id === 'climaRefresh' ? el.value + ' min' : (el.id === 'topRotacion' ? el.value + ' s' : el.value);
+  if (l) l.textContent = el.id === 'climaRefresh' ? el.value + ' min' : el.value;
 }
 
 function dirty(el) {
@@ -229,7 +227,7 @@ function toggleConnect() {
         if (d[key] !== undefined) {
           const el = document.getElementById(id);
           if (el) el.value = d[key];
-          if (id === 'brilloDia' || id === 'brilloNoche' || id === 'climaRefresh' || id === 'topRotacion')
+          if (id === 'brilloDia' || id === 'brilloNoche' || id === 'climaRefresh')
             upd(el);
         }
       }

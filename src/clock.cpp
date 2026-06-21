@@ -181,26 +181,7 @@ static uint16_t weatherIconColor(int wmoCode) {
   return dma_display->color565(200, 200, 200);
 }
 
-// ─── Fecha compacta para linea superior ────────────────
-static void drawDateTop() {
-  struct tm t;
-  if (!getLocalTime(&t, 50)) return;
-  int w = PANEL_RES_X * PANEL_CHAIN;
-
-  const char* days[] = {"dom","lun","mar","mie","jue","vie","sab"};
-  const char* months[] = {"ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"};
-
-  char buf[20];
-  snprintf(buf, sizeof(buf), "%s %02d %s", days[t.tm_wday], t.tm_mday, months[t.tm_mon]);
-
-  dma_display->setTextSize(1);
-  dma_display->setTextColor(dma_display->color565(180, 180, 180));
-  int txtW = strlen(buf) * 6;
-  dma_display->setCursor(w - txtW - 2, 2);
-  dma_display->print(buf);
-}
-
-// ─── CLIMA (esquina superior derecha) ──────────────────
+// ─── Clima (esquina superior derecha) ──────────────────
 static void drawWeatherWidget() {
   if (!weather.valid) return;
 
@@ -285,20 +266,8 @@ void drawClock() {
     dma_display->print(timeStr[idx]);
   }
 
-  // ─── LINEA SUPERIOR: clima o rotacion clima/fecha ───
-  bool mostrarDia = getMostrarDia();
-  int rotacion = getTopRotacion();
-  if (mostrarDia && rotacion > 0) {
-    unsigned long rotMs = rotacion * 1000UL;
-    unsigned long phase = millis() % (rotMs * 2);  // ciclo completo = 2 periodos
-    if (phase < rotMs) {
-      drawWeatherWidget();
-    } else {
-      drawDateTop();
-    }
-  } else {
-    drawWeatherWidget();
-  }
+  // ─── CLIMA ──────────────────────────────────────────
+  drawWeatherWidget();
 
   // ─── MARQUEE INFERIOR: día + fecha ──────────────────
   if (!getMarqueeActivo()) { dma_display->flipDMABuffer(); return; }
@@ -307,7 +276,7 @@ void drawClock() {
   char marquee[32];
 
   int fmt = getFormatoFecha();
-  mostrarDia = getMostrarDia();
+  bool mostrarDia = getMostrarDia();
 
   if (mostrarDia) {
     switch (fmt) {
