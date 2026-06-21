@@ -20,14 +20,14 @@ static unsigned long lastStatusPub = 0;
 
 // ─── Callback MQTT ──────────────────────────────────────
 static void mqttCallback(char* topic, byte* payload, unsigned int len) {
-  char buf[256];
+  char buf[512];
   unsigned int clen = len < sizeof(buf)-1 ? len : sizeof(buf)-1;
   memcpy(buf, payload, clen);
   buf[clen] = '\0';
 
-  Serial.printf("[MQTT] %s\n", topic);
+  Serial.printf("[MQTT] %s (%d bytes)\n", topic, len);
 
-  StaticJsonDocument<256> doc;
+  StaticJsonDocument<512> doc;
   DeserializationError err = deserializeJson(doc, buf);
   if (err) return;
 

@@ -74,8 +74,8 @@
   <h2>Horario noche</h2>
   <div class="body">
     <div class="grid2">
-      <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23"></div>
-      <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23"></div>
+      <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23" oninput="dirty(this)"></div>
+      <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23" oninput="dirty(this)"></div>
     </div>
   </div>
 </div>
@@ -83,16 +83,16 @@
 <div class="card">
   <h2>Gradiente día</h2>
   <div class="body">
-    <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff"></div>
-    <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000"></div>
+    <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff" oninput="dirty(this)"></div>
+    <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000" oninput="dirty(this)"></div>
   </div>
 </div>
 
 <div class="card">
   <h2>Gradiente noche</h2>
   <div class="body">
-    <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0"></div>
-    <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040"></div>
+    <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0" oninput="dirty(this)"></div>
+    <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040" oninput="dirty(this)"></div>
   </div>
 </div>
 
@@ -100,7 +100,7 @@
   <h2>Fecha</h2>
   <div class="body">
     <div class="row"><label>Formato</label>
-      <select id="formatoFecha">
+      <select id="formatoFecha" onchange="dirty(this)">
         <option value="0">DD-MM-YYYY</option>
         <option value="1">DD/MM/YYYY</option>
         <option value="2">MM-DD-YYYY</option>
@@ -108,13 +108,13 @@
       </select>
     </div>
     <div class="row"><label>Día</label>
-      <select id="mostrarDia">
+      <select id="mostrarDia" onchange="dirty(this)">
         <option value="1">Mostrar día de la semana</option>
         <option value="0">Ocultar día</option>
       </select>
     </div>
     <div class="row"><label>Marquee</label>
-      <select id="marqueeActivo">
+      <select id="marqueeActivo" onchange="dirty(this)">
         <option value="1">Animado (entra/sale)</option>
         <option value="0">Oculto</option>
       </select>
@@ -126,8 +126,8 @@
   <h2>Clima</h2>
   <div class="body">
     <div class="grid2">
-      <div><label>Latitud</label><input type="text" id="climaLat"></div>
-      <div><label>Longitud</label><input type="text" id="climaLon"></div>
+      <div><label>Latitud</label><input type="text" id="climaLat" oninput="dirty(this)"></div>
+      <div><label>Longitud</label><input type="text" id="climaLon" oninput="dirty(this)"></div>
     </div>
     <div class="row" style="margin-top:8px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="upd(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
   </div>
@@ -146,10 +146,28 @@
 
 <script>
 let client = null;
+let dirtyFields = new Set();
+
+// Mapa: id HTML → clave MQTT
+const FIELD_MAP = {
+  brilloDia: 'brillo_dia', brilloNoche: 'brillo_noche',
+  inicioNoche: 'inicio_noche', finNoche: 'fin_noche',
+  gradInicio: 'grad_ini', gradFin: 'grad_fin',
+  gradNocInicio: 'grad_noc_ini', gradNocFin: 'grad_noc_fin',
+  formatoFecha: 'formato_fecha', mostrarDia: 'mostrar_dia',
+  marqueeActivo: 'marquee_activo',
+  climaLat: 'clima_lat', climaLon: 'clima_lon', climaRefresh: 'clima_refresh',
+};
 
 function upd(el) {
   const l = document.getElementById(el.id + 'Val');
   if (l) l.textContent = el.id === 'climaRefresh' ? el.value + ' min' : el.value;
+}
+
+function dirty(el) {
+  dirtyFields.add(el.id);
+  document.getElementById('saveBtn').disabled = false;
+  upd(el);
 }
 
 function toggleConn() {
@@ -160,7 +178,7 @@ function setStatus(st, txt) {
   const el = document.getElementById('connStatus');
   el.textContent = txt;
   el.className = 'status ' + st;
-  document.getElementById('saveBtn').disabled = (st !== 'on');
+  document.getElementById('saveBtn').disabled = (st !== 'on' || dirtyFields.size === 0);
   document.getElementById('connBtn').textContent = st === 'on' ? 'Desconectar' : 'Conectar';
   document.getElementById('connBtn').disabled = false;
   if (st === 'on') document.getElementById('connCard').classList.add('collapsed');
@@ -169,6 +187,7 @@ function setStatus(st, txt) {
 function toggleConnect() {
   if (client && client.connected) {
     client.end(true); client = null;
+    dirtyFields.clear();
     setStatus('off', 'Desconectado');
     return;
   }
@@ -187,9 +206,12 @@ function toggleConnect() {
   });
 
   client.on('connect', () => {
+    console.log('[MQTT] CONNECTED');
     setStatus('on', 'Conectado');
     client.subscribe('reloj/status');
   });
+  client.on('reconnect', () => console.log('[MQTT] Reconnecting...'));
+  client.on('disconnect', (pkt) => console.log('[MQTT] Disconnect packet:', pkt));
 
   client.on('message', (t, p) => {
     try {
@@ -200,52 +222,54 @@ function toggleConnect() {
       ).join(' &nbsp; ');
       document.getElementById('lastUpd').textContent = 'Última actualización: ' + new Date().toLocaleTimeString();
 
-      if (d.brillo_dia !== undefined) setVal('brilloDia', d.brillo_dia);
-      if (d.brillo_noche !== undefined) setVal('brilloNoche', d.brillo_noche);
-      if (d.inicio_noche !== undefined) document.getElementById('inicioNoche').value = d.inicio_noche;
-      if (d.fin_noche !== undefined) document.getElementById('finNoche').value = d.fin_noche;
-      if (d.grad_ini !== undefined) document.getElementById('gradInicio').value = d.grad_ini;
-      if (d.grad_fin !== undefined) document.getElementById('gradFin').value = d.grad_fin;
-      if (d.grad_noc_ini !== undefined) document.getElementById('gradNocInicio').value = d.grad_noc_ini;
-      if (d.grad_noc_fin !== undefined) document.getElementById('gradNocFin').value = d.grad_noc_fin;
-      if (d.formato_fecha !== undefined) document.getElementById('formatoFecha').value = d.formato_fecha;
-      if (d.mostrar_dia !== undefined) document.getElementById('mostrarDia').value = d.mostrar_dia;
-      if (d.marquee_activo !== undefined) document.getElementById('marqueeActivo').value = d.marquee_activo;
-      if (d.clima_lat !== undefined) document.getElementById('climaLat').value = d.clima_lat;
-      if (d.clima_lon !== undefined) document.getElementById('climaLon').value = d.clima_lon;
-      if (d.clima_refresh !== undefined) setVal('climaRefresh', d.clima_refresh);
+      // Actualizar inputs y limpiar dirty
+      for (const [id, key] of Object.entries(FIELD_MAP)) {
+        if (d[key] !== undefined) {
+          const el = document.getElementById(id);
+          if (el) el.value = d[key];
+          if (id === 'brilloDia' || id === 'brilloNoche' || id === 'climaRefresh')
+            upd(el);
+        }
+      }
+      dirtyFields.clear();
+      if (client && client.connected) document.getElementById('saveBtn').disabled = true;
     } catch(e) { document.getElementById('statusBox').textContent = 'Error: ' + e.message; }
   });
 
   client.on('error', () => setStatus('off', 'Error'));
-  client.on('close', () => { if (client) setStatus('off', 'Desconectado'); });
-}
-
-function setVal(id, v) {
-  const el = document.getElementById(id);
-  el.value = v;
-  upd(el);
+  client.on('close', () => { if (client) { dirtyFields.clear(); setStatus('off', 'Desconectado'); } });
 }
 
 function send() {
-  if (!client || !client.connected) return;
-  const cfg = {
-    brillo_dia: +document.getElementById('brilloDia').value,
-    brillo_noche: +document.getElementById('brilloNoche').value,
-    inicio_noche: +document.getElementById('inicioNoche').value,
-    fin_noche: +document.getElementById('finNoche').value,
-    grad_ini: document.getElementById('gradInicio').value,
-    grad_fin: document.getElementById('gradFin').value,
-    grad_noc_ini: document.getElementById('gradNocInicio').value,
-    grad_noc_fin: document.getElementById('gradNocFin').value,
-    formato_fecha: +document.getElementById('formatoFecha').value,
-    mostrar_dia: +document.getElementById('mostrarDia').value,
-    marquee_activo: +document.getElementById('marqueeActivo').value,
-    clima_lat: +document.getElementById('climaLat').value,
-    clima_lon: +document.getElementById('climaLon').value,
-    clima_refresh: +document.getElementById('climaRefresh').value,
-  };
-  client.publish('reloj/config', JSON.stringify(cfg));
+  if (!client || !client.connected || dirtyFields.size === 0) return;
+
+  const cfg = {};
+  for (const id of dirtyFields) {
+    const key = FIELD_MAP[id];
+    if (!key) continue;
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.type === 'color') {
+      cfg[key] = el.value;
+    } else if (key === 'clima_lat' || key === 'clima_lon') {
+      cfg[key] = parseFloat(el.value) || 0;
+    } else {
+      cfg[key] = parseInt(el.value, 10) || 0;
+    }
+  }
+
+  const payload = JSON.stringify(cfg);
+  console.log('[MQTT] Publishing dirty fields:', [...dirtyFields], payload);
+  client.publish('reloj/config', payload, {}, (err) => {
+    if (err) {
+      console.error('[MQTT] Publish FAILED:', err);
+      document.getElementById('statusBox').textContent = 'Error al enviar: ' + err.message;
+    } else {
+      console.log('[MQTT] Publish ACK');
+      dirtyFields.clear();
+      document.getElementById('saveBtn').disabled = true;
+    }
+  });
   const btn = document.getElementById('saveBtn');
   btn.textContent = '✓ Enviado';
   setTimeout(() => { btn.textContent = 'Guardar configuración'; }, 2000);
