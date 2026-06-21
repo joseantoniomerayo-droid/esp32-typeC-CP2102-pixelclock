@@ -247,7 +247,7 @@ void drawClock() {
 
   // ─── Brillo automático ──────────────────────────────
   static int lastBrightness = -1;
-  bool esNoche = (t.tm_hour >= nvsLoadInt("inicio_noche", 23) || t.tm_hour < nvsLoadInt("fin_noche", 7));
+  bool esNoche = getUsarNocturno() && (t.tm_hour >= nvsLoadInt("inicio_noche", 23) || t.tm_hour < nvsLoadInt("fin_noche", 7));
   int targetBrightness = esNoche ? nvsLoadInt("brillo_noche", 1) : nvsLoadInt("brillo_dia", 40);
   if (targetBrightness != lastBrightness) {
     dma_display->setPanelBrightness(targetBrightness);

@@ -35,6 +35,21 @@
   .grid2 label { display: block; font-size: 0.75em; color: #667; margin-bottom: 4px; }
 
   .status-box { background: #0f3460; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.8em; line-height: 1.6; color: #88aacc; min-height: 50px; }
+  .hidden { display: none !important; }
+
+  /* Toggle switch */
+  .toggle { position: relative; display: inline-block; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle .slider {
+    display: block; width: 44px; height: 24px; background: #555; border-radius: 12px;
+    transition: 0.3s;
+  }
+  .toggle .slider::after {
+    content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: 0.3s;
+  }
+  .toggle input:checked + .slider { background: #4a7cff; }
+  .toggle input:checked + .slider::after { transform: translateX(20px); }
 
   button { background: #4a7cff; color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; width: 100%; }
   button:hover { background: #3a6aee; }
@@ -63,61 +78,55 @@
 </div>
 
 <div class="card">
-  <h2>Brillo</h2>
+  <h2>Esquema de Color</h2>
   <div class="body">
-    <div class="row"><label>Día</label><input type="range" id="brilloDia" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloDiaVal">40</span></div>
-    <div class="row"><label>Noche</label><input type="range" id="brilloNoche" min="0" max="255" oninput="upd(this)"><span class="val" id="brilloNocheVal">1</span></div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Horario noche</h2>
-  <div class="body">
-    <div class="grid2">
-      <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23" oninput="dirty(this)"></div>
-      <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23" oninput="dirty(this)"></div>
+    <div class="row"><label>Brillo</label><input type="range" id="brilloDia" min="0" max="255" oninput="dirty(this)"><span class="val" id="brilloDiaVal">40</span></div>
+    <div class="row"><label>Gradiente</label><span style="display:flex;gap:6px;flex:1"><input type="color" id="gradInicio" value="#00b4ff" oninput="dirty(this)" style="flex:1;height:32px"><input type="color" id="gradFin" value="#ff0000" oninput="dirty(this)" style="flex:1;height:32px"></span></div>
+    <hr style="border-color:#1a4a8a;margin:10px 0">
+    <div class="row"><label>Modo Noche</label>
+      <label class="toggle" style="flex:0.3">
+        <input type="checkbox" id="usarNocturno" checked onchange="toggleNoche()">
+        <span class="slider"></span>
+      </label>
+      <span id="modoNocheLabel" style="font-size:0.85em;color:#8899cc;min-width:30px">Sí</span>
     </div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Gradiente día</h2>
-  <div class="body">
-    <div class="row"><label>Inicio</label><input type="color" id="gradInicio" value="#00b4ff" oninput="dirty(this)"></div>
-    <div class="row"><label>Fin</label><input type="color" id="gradFin" value="#ff0000" oninput="dirty(this)"></div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Gradiente noche</h2>
-  <div class="body">
-    <div class="row"><label>Inicio</label><input type="color" id="gradNocInicio" value="#2850a0" oninput="dirty(this)"></div>
-    <div class="row"><label>Fin</label><input type="color" id="gradNocFin" value="#102040" oninput="dirty(this)"></div>
+    <div id="nocheConfig">
+      <div class="grid2">
+        <div><label>Inicio</label><input type="number" id="inicioNoche" min="0" max="23" oninput="dirty(this)"></div>
+        <div><label>Fin</label><input type="number" id="finNoche" min="0" max="23" oninput="dirty(this)"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><label>Brillo</label><input type="range" id="brilloNoche" min="0" max="255" oninput="dirty(this)"><span class="val" id="brilloNocheVal">1</span></div>
+      <div class="row"><label>Gradiente</label><span style="display:flex;gap:6px;flex:1"><input type="color" id="gradNocInicio" value="#2850a0" oninput="dirty(this)" style="flex:1;height:32px"><input type="color" id="gradNocFin" value="#102040" oninput="dirty(this)" style="flex:1;height:32px"></span></div>
+    </div>
   </div>
 </div>
 
 <div class="card">
   <h2>Fecha</h2>
   <div class="body">
-    <div class="row"><label>Formato</label>
-      <select id="formatoFecha" onchange="dirty(this)">
-        <option value="0">DD-MM-YYYY</option>
-        <option value="1">DD/MM/YYYY</option>
-        <option value="2">MM-DD-YYYY</option>
-        <option value="3">YYYY-MM-DD</option>
-      </select>
+    <div class="row"><label>Mostrar Fecha</label>
+      <label class="toggle">
+        <input type="checkbox" id="marqueeActivo" checked onchange="toggleMarquee()">
+        <span class="slider"></span>
+      </label>
+      <span id="marqueeActivoLabel" style="font-size:0.85em;color:#8899cc;min-width:50px">Sí</span>
     </div>
-    <div class="row"><label>Día</label>
-      <select id="mostrarDia" onchange="dirty(this)">
-        <option value="1">Mostrar día de la semana</option>
-        <option value="0">Ocultar día</option>
-      </select>
-    </div>
-    <div class="row"><label>Marquee</label>
-      <select id="marqueeActivo" onchange="dirty(this)">
-        <option value="1">Animado (entra/sale)</option>
-        <option value="0">Oculto</option>
-      </select>
+    <div id="fechaConfig">
+      <div class="row"><label>Formato</label>
+        <select id="formatoFecha" onchange="dirty(this)">
+          <option value="0">DD-MM-YYYY</option>
+          <option value="1">DD/MM/YYYY</option>
+          <option value="2">MM-DD-YYYY</option>
+          <option value="3">YYYY-MM-DD</option>
+        </select>
+      </div>
+      <div class="row"><label>Día semana</label>
+        <label class="toggle">
+          <input type="checkbox" id="mostrarDia" checked onchange="toggleDia()">
+          <span class="slider"></span>
+        </label>
+        <span id="mostrarDiaLabel" style="font-size:0.85em;color:#8899cc;min-width:50px">Sí</span>
+      </div>
     </div>
   </div>
 </div>
@@ -129,7 +138,7 @@
       <div><label>Latitud</label><input type="text" id="climaLat" oninput="dirty(this)"></div>
       <div><label>Longitud</label><input type="text" id="climaLon" oninput="dirty(this)"></div>
     </div>
-    <div class="row" style="margin-top:8px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="upd(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
+    <div class="row" style="margin-top:8px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="dirty(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
   </div>
 </div>
 
@@ -157,6 +166,7 @@ const FIELD_MAP = {
   formatoFecha: 'formato_fecha', mostrarDia: 'mostrar_dia',
   marqueeActivo: 'marquee_activo',
   climaLat: 'clima_lat', climaLon: 'clima_lon', climaRefresh: 'clima_refresh',
+  usarNocturno: 'usar_nocturno',
 };
 
 function upd(el) {
@@ -172,6 +182,28 @@ function dirty(el) {
 
 function toggleConn() {
   document.getElementById('connCard').classList.toggle('collapsed');
+}
+
+function toggleNoche() {
+  const cb = document.getElementById('usarNocturno');
+  const activo = cb.checked;
+  document.getElementById('nocheConfig').classList.toggle('hidden', !activo);
+  document.getElementById('modoNocheLabel').textContent = activo ? 'Sí' : 'No';
+  dirty(cb);
+}
+
+function toggleDia() {
+  const cb = document.getElementById('mostrarDia');
+  document.getElementById('mostrarDiaLabel').textContent = cb.checked ? 'Sí' : 'No';
+  dirty(cb);
+}
+
+function toggleMarquee() {
+  const cb = document.getElementById('marqueeActivo');
+  const activo = cb.checked;
+  document.getElementById('marqueeActivoLabel').textContent = activo ? 'Sí' : 'No';
+  document.getElementById('fechaConfig').classList.toggle('hidden', !activo);
+  dirty(cb);
 }
 
 function setStatus(st, txt) {
@@ -220,17 +252,26 @@ function toggleConnect() {
       box.innerHTML = Object.entries(d).map(([k, v]) =>
         `<span style="color:#4a7cff;">${k}</span>: ${v}`
       ).join(' &nbsp; ');
-      document.getElementById('lastUpd').textContent = 'Última actualización: ' + new Date().toLocaleTimeString();
+      document.getElementById('lastUpd').textContent = 'Última actualización: ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
 
       // Actualizar inputs y limpiar dirty
       for (const [id, key] of Object.entries(FIELD_MAP)) {
         if (d[key] !== undefined) {
           const el = document.getElementById(id);
-          if (el) el.value = d[key];
+          if (!el) continue;
+          if (el.type === 'checkbox') {
+            el.checked = d[key] == 1;
+            const label = document.getElementById(id + 'Label');
+            if (label) label.textContent = el.checked ? 'Sí' : 'No';
+          } else {
+            el.value = d[key];
+          }
           if (id === 'brilloDia' || id === 'brilloNoche' || id === 'climaRefresh')
             upd(el);
         }
       }
+      // Sincronizar toggle noche y visibilidad
+      if (d.usar_nocturno !== undefined) toggleNoche();
       dirtyFields.clear();
       if (client && client.connected) document.getElementById('saveBtn').disabled = true;
     } catch(e) { document.getElementById('statusBox').textContent = 'Error: ' + e.message; }
@@ -251,6 +292,8 @@ function send() {
     if (!el) continue;
     if (el.type === 'color') {
       cfg[key] = el.value;
+    } else if (el.type === 'checkbox') {
+      cfg[key] = el.checked ? 1 : 0;
     } else if (key === 'clima_lat' || key === 'clima_lon') {
       cfg[key] = parseFloat(el.value) || 0;
     } else {

@@ -47,6 +47,7 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (doc.containsKey("clima_refresh")) setClimaRefresh(doc["clima_refresh"]);
   if (doc.containsKey("clima_lat"))     setLatitud(doc["clima_lat"]);
   if (doc.containsKey("clima_lon"))     setLongitud(doc["clima_lon"]);
+  if (doc.containsKey("usar_nocturno")) setUsarNocturno(doc["usar_nocturno"]);
 
   mqttPublishStatus();
 }
@@ -63,13 +64,13 @@ void mqttPublishStatus() {
     "\"grad_ini\":\"#%06X\",\"grad_fin\":\"#%06X\","
     "\"grad_noc_ini\":\"#%06X\",\"grad_noc_fin\":\"#%06X\","
     "\"clima_refresh\":%d,"
-    "\"clima_lat\":%.4f,\"clima_lon\":%.4f}",
+    "\"clima_lat\":%.4f,\"clima_lon\":%.4f,\"usar_nocturno\":%d}",
     getBrilloDia(), getBrilloNoche(),
     getInicioNoche(), getFinNoche(),
     getGradiente(), getGradienteNoche(), getFormatoFecha(), getMostrarDia()?1:0, getMarqueeActivo()?1:0,
     getColorInicio(false), getColorFin(false),
     getColorInicio(true), getColorFin(true), getClimaRefresh(),
-    getLatitud(), getLongitud());
+    getLatitud(), getLongitud(), getUsarNocturno()?1:0);
 
   mqttClient.publish("reloj/status", buf, true);
 }
