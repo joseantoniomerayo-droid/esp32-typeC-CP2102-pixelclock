@@ -122,6 +122,39 @@ mosquitto_pub -h BROKER_IP -t "reloj/config" \
   -m '{"brillo_noche":2}' -u usuario -P contraseña
 ```
 
+## Montar el broker MQTT
+
+En cualquier máquina Debian/Ubuntu (o VM en ProxMox):
+
+```bash
+# Instalar Mosquitto
+sudo apt update && sudo apt install -y mosquitto mosquitto-clients
+
+# Configurar
+sudo tee /etc/mosquitto/conf.d/pixelclock.conf << EOF
+listener 1883
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+
+listener 9001
+protocol websockets
+EOF
+
+# Crear usuario y contraseña
+sudo mosquitto_passwd -c /etc/mosquitto/passwd pixelclock
+# (el sistema pedirá la contraseña dos veces)
+
+# Reiniciar y habilitar
+sudo systemctl restart mosquitto
+sudo systemctl enable mosquitto
+
+# Verificar que escucha en ambos puertos
+sudo netstat -tlnp | grep mosquitto
+```
+
+El ESP32 se conecta al broker automáticamente si configuras los datos
+desde el portal WiFiManager (PixelClock-AP).
+
 ## Compilar y flashear
 
 ```bash
