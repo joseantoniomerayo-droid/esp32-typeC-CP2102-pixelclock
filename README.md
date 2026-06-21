@@ -2,7 +2,7 @@
 
 Reloj inteligente con 2 paneles LED RGB P4 64×32 (128×32 total),
 controlado por ESP32 en placa DMDos V3. Clima vía Open-Meteo,
-configuración por WiFiManager + MQTT.
+configuración por WiFiManager + Web UI vía MQTT.
 
 ![Hardware](https://img.shields.io/badge/ESP32-ESP--WROOM--32-blue)
 ![Paneles](https://img.shields.io/badge/Paneles-2×P4_64×32-orange)
@@ -15,7 +15,7 @@ configuración por WiFiManager + MQTT.
 | **Placa** | DMDos V3 (ESP32-D0WD-V3 + CP2102 + conector HUB75) |
 | **Paneles** | 2× P4 64×32 RGB, scan 1/16, interfaz HUB75 |
 | **Resolución** | 128 × 32 píxeles |
-| **Alimentación** | ESP32 por USB-C (CP2102), paneles por fuente 5V externa |
+| **Alimentación** | ESP32 por USB-C, paneles por fuente 5V externa |
 
 ### Pinout HUB75 (fijo DMDos V3)
 
@@ -35,26 +35,38 @@ configuración por WiFiManager + MQTT.
 - Hora HH:MM:SS con gradiente de color configurable
 - Fecha y día de la semana (marquee animado)
 - Brillo automático día/noche con horarios configurables
+- Gradiente independiente para día y noche
 
 ### Clima
 - Datos meteorológicos desde [Open-Meteo](https://open-meteo.com/) (gratuito, sin API key)
 - Temperatura e icono del tiempo (sol, nube, lluvia, nieve, niebla, tormenta)
-- Coordenadas configurables vía MQTT
+- Coordenadas configurables vía web o MQTT
+- Zona horaria automática según coordenadas
 
 ### Primer arranque (WiFiManager)
 1. El ESP32 crea una red WiFi **PixelClock-AP** (sin contraseña)
 2. El panel muestra un código QR para conectar directamente
 3. Conéctate desde el móvil y se abrirá el portal de configuración
-4. Introduce:
-   - **WiFi**: SSID y contraseña de tu red 2.4GHz
-   - **MQTT**: IP del broker, puerto, usuario y contraseña (opcional)
+4. Introduce los datos de tu red WiFi y del broker MQTT
 5. El ESP32 guarda la configuración en NVS y se conecta
 
 ### Reset de fábrica
 Durante el funcionamiento normal, pulsa y mantén el botón **BOOT** durante **5 segundos**.
 El panel mostrará la cuenta atrás y el ESP32 se reiniciará borrando toda la configuración.
 
-### Control remoto (MQTT)
+### Web UI (http://192.168.1.59)
+Interfaz web que conecta directamente al broker MQTT por WebSocket.
+No requiere backend — solo HTML + JavaScript.
+
+| Sección | Parámetros |
+|---|---|
+| **Brillo** | Día (0–255), Noche (0–255) |
+| **Horario noche** | Hora de inicio y fin del modo nocturno |
+| **Gradiente día** | Cian→Rojo, Amarillo→Rojo |
+| **Gradiente noche** | Cian→Rojo, Amarillo→Rojo, Azul tenue |
+| **Clima** | Latitud, Longitud, Refresco (minutos) |
+
+### Control por MQTT
 Suscríbete a `reloj/status` para ver el estado actual.
 Publica en `reloj/config` con formato JSON para cambiar parámetros:
 
@@ -65,6 +77,7 @@ Publica en `reloj/config` con formato JSON para cambiar parámetros:
   "inicio_noche": 23,
   "fin_noche": 7,
   "gradiente": 0,
+  "gradiente_noche": 2,
   "clima_refresh": 30,
   "clima_lat": 40.4168,
   "clima_lon": -3.7038
@@ -77,10 +90,11 @@ Publica en `reloj/config` con formato JSON para cambiar parámetros:
 | `brillo_noche` | 0–255 | Brillo en horario nocturno |
 | `inicio_noche` | 0–23 | Hora de inicio del modo noche |
 | `fin_noche` | 0–23 | Hora de fin del modo noche |
-| `gradiente` | 0–1 | 0: cian→rojo, 1: amarillo→rojo |
-| `clima_refresh` | 5–120 | Minutos entre actualizaciones del clima |
-| `clima_lat` | -90–90 | Latitud de la ubicación |
-| `clima_lon` | -180–180 | Longitud de la ubicación |
+| `gradiente` | 0–1 | Gradiente diurno |
+| `gradiente_noche` | 0–2 | Gradiente nocturno (2 = azul tenue) |
+| `clima_refresh` | 5–120 | Minutos entre actualizaciones |
+| `clima_lat` | -90–90 | Latitud |
+| `clima_lon` | -180–180 | Longitud |
 
 Ejemplo desde terminal:
 
@@ -115,6 +129,7 @@ pio device monitor
 
 ```
 ├── platformio.ini          ← Dependencias y configuración de compilación
+├── index.html              ← Web UI (copiar en Nginx de la VM)
 ├── include/
 │   ├── clock.h             ← API del módulo de reloj
 │   ├── display.h           ← Configuración de pines HUB75
@@ -137,7 +152,7 @@ pio device monitor
 |---|---|
 | `ESP32 HUB75 LED MATRIX PANEL DMA Display` | Driver I2S-DMA para paneles HUB75 |
 | `Adafruit GFX Library` | Gráficos básicos para el display |
-| `WiFiManager` | Portal cautivo para configuración WiFi inicial |
+| `WiFiManager` | Portal cautivo para configuración inicial |
 | `PubSubClient` | Cliente MQTT |
 | `ArduinoJson` | Parseo de mensajes JSON |
 
