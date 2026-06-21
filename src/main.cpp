@@ -9,20 +9,19 @@
 #include "qr_display.h"
 
 #define PANEL_BRIGHTNESS 40
-#define PIN_BOOT         0    // BOOT button en DMDos V3 (pull-up)
-#define RESET_HOLD_MS    3000 // ms para resetear WiFi manteniendo BOOT
+#define PIN_BOOT         0
 
 // ─── Reset WiFi si se pulsa BOOT al arrancar ──────────
 static void checkHardReset() {
   pinMode(PIN_BOOT, INPUT_PULLUP);
   if (digitalRead(PIN_BOOT) == LOW) {
-    Serial.println("BOOT pulsado — limpiando config WiFi...");
     WiFiManager wm;
     wm.resetSettings();
-    nvsSaveStr("wifi_ssid", "");
-    nvsSaveStr("wifi_pass", "");
-    Serial.println("Config borrada. Reiniciando...");
-    delay(1000);
+    nvsSaveStr("mqtt_host", "");
+    nvsSaveStr("mqtt_user", "");
+    nvsSaveStr("mqtt_pass", "");
+    nvsSaveInt("mqtt_port", 1883);
+    Serial.println("Reset completo — reiniciando");
     ESP.restart();
   }
 }
@@ -34,26 +33,53 @@ void setup() {
   delay(500);
 
   nvsInit();
-
-  // Reset WiFi si GPIO0 pulsado al arrancar
   checkHardReset();
 
   // Display
   initDisplay();
   dma_display->setPanelBrightness(PANEL_BRIGHTNESS);
 
-  // WiFiManager
+  // ─── WiFiManager con campos MQTT ────────────────────
   WiFiManager wm;
   wm.setConfigPortalTimeout(180);
   wm.setTitle("PixelClock");
   wm.setConnectTimeout(15);
 
+  // Campos personalizados para MQTT
+  char mqttHost[64] = "";
+  char mqttPort[8]  = "";
+  char mqttUser[32] = "";
+  char mqttPass[32] = "";
+
+  // Precargar valores desde NVS (si existen)
+  nvsLoadStr("mqtt_host", "").toCharArray(mqttHost, sizeof(mqttHost));
+  snprintf(mqttPort, sizeof(mqttPort), "%d", nvsLoadInt("mqtt_port", 1883));
+  nvsLoadStr("mqtt_user", "").toCharArray(mqttUser, sizeof(mqttUser));
+  nvsLoadStr("mqtt_pass", "").toCharArray(mqttPass, sizeof(mqttPass));
+
+  WiFiManagerParameter pMqttHost("mqtt_host", "Servidor MQTT (IP o host)", mqttHost, 63);
+  WiFiManagerParameter pMqttPort("mqtt_port", "Puerto MQTT", mqttPort, 7);
+  WiFiManagerParameter pMqttUser("mqtt_user", "Usuario MQTT", mqttUser, 31);
+  WiFiManagerParameter pMqttPass("mqtt_pass", "Contrasena MQTT", mqttPass, 31, "type=password");
+
+  wm.addParameter(&pMqttHost);
+  wm.addParameter(&pMqttPort);
+  wm.addParameter(&pMqttUser);
+  wm.addParameter(&pMqttPass);
+
+  // Mostrar QR mientras espera config
   showQRCode();
 
   if (!wm.autoConnect("PixelClock-AP")) {
     Serial.println("WiFi timeout — reiniciando");
     ESP.restart();
   }
+
+  // Guardar config MQTT en NVS tras configuracion
+  nvsSaveStr("mqtt_host", pMqttHost.getValue());
+  nvsSaveInt("mqtt_port", atoi(pMqttPort.getValue()));
+  nvsSaveStr("mqtt_user", pMqttUser.getValue());
+  nvsSaveStr("mqtt_pass", pMqttPass.getValue());
 
   showConnecting("Conectando...");
   dma_display->setPanelBrightness(10);
