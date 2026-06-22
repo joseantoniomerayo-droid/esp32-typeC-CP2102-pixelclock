@@ -10,6 +10,7 @@
 #define DEF_LON           "-3.7038"
 #define DEF_CLIMA_REFRESH 30
 #define DEF_USAR_NOCTURNO 1
+#define DEF_CALENDAR_ACTIVO 1
 
 void  nvsInit();
 void  nvsSaveStr(const char* key, const char* val);
@@ -32,6 +33,8 @@ float getLatitud();
 float getLongitud();
 int   getClimaRefresh();
 bool  getUsarNocturno();
+bool  getCalendarActivo();
+void  setCalendarActivo(bool v);
 
 void  setBrilloDia(int v);
 void  setBrilloNoche(int v);

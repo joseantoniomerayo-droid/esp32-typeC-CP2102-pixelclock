@@ -27,6 +27,15 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
 
   Serial.printf("[MQTT] %s (%d bytes)\n", topic, len);
 
+  // reloj/events = evento calendario
+  if (strcmp(topic, "reloj/events") == 0) {
+    StaticJsonDocument<256> doc;
+    DeserializationError err = deserializeJson(doc, buf);
+    if (err) return;
+    setCalendarEvent(doc["title"] | "", doc["start"] | "");
+    return;
+  }
+
   StaticJsonDocument<512> doc;
   DeserializationError err = deserializeJson(doc, buf);
   if (err) return;
@@ -48,6 +57,7 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (doc.containsKey("clima_lat"))     setLatitud(doc["clima_lat"]);
   if (doc.containsKey("clima_lon"))     setLongitud(doc["clima_lon"]);
   if (doc.containsKey("usar_nocturno")) setUsarNocturno(doc["usar_nocturno"]);
+  if (doc.containsKey("calendar_activo")) setCalendarActivo(doc["calendar_activo"]);
 
   mqttPublishStatus();
 }
@@ -64,13 +74,13 @@ void mqttPublishStatus() {
     "\"grad_ini\":\"#%06X\",\"grad_fin\":\"#%06X\","
     "\"grad_noc_ini\":\"#%06X\",\"grad_noc_fin\":\"#%06X\","
     "\"clima_refresh\":%d,"
-    "\"clima_lat\":%.4f,\"clima_lon\":%.4f,\"usar_nocturno\":%d}",
+    "\"clima_lat\":%.4f,\"clima_lon\":%.4f,\"usar_nocturno\":%d,\"calendar_activo\":%d}",
     getBrilloDia(), getBrilloNoche(),
     getInicioNoche(), getFinNoche(),
     getGradiente(), getGradienteNoche(), getFormatoFecha(), getMostrarDia()?1:0, getMarqueeActivo()?1:0,
     getColorInicio(false), getColorFin(false),
     getColorInicio(true), getColorFin(true), getClimaRefresh(),
-    getLatitud(), getLongitud(), getUsarNocturno()?1:0);
+    getLatitud(), getLongitud(), getUsarNocturno()?1:0, getCalendarActivo()?1:0);
 
   mqttClient.publish("reloj/status", buf, true);
 }
@@ -118,6 +128,7 @@ void mqttLoop() {
       if (ok) {
         Serial.println("OK");
         mqttClient.subscribe("reloj/config");
+        mqttClient.subscribe("reloj/events");
         mqttPublishStatus();
       } else {
         Serial.printf("FAIL (rc=%d)\n", mqttClient.state());

@@ -204,6 +204,40 @@ static void drawWeatherWidget() {
   dma_display->print("C");
 }
 
+// ─── Evento calendario (recibido por MQTT) ──────────────
+static char eventTitle[64] = "";
+static char eventStart[16] = "";
+
+void setCalendarEvent(const char* title, const char* start) {
+  strncpy(eventTitle, title ? title : "", sizeof(eventTitle)-1);
+  strncpy(eventStart, start ? start : "", sizeof(eventStart)-1);
+}
+
+// ─── Calendario (esquina superior izquierda) ────────────
+static void drawCalendarWidget() {
+  if (!getCalendarActivo() || strlen(eventTitle) == 0) return;
+
+  // Extraer HH:MM del formato ISO 8601 si existe
+  char label[80];
+  if (strlen(eventStart) >= 11) {
+    char hhmm[6];
+    hhmm[0] = eventStart[11];
+    hhmm[1] = eventStart[12];
+    hhmm[2] = ':';
+    hhmm[3] = eventStart[14];
+    hhmm[4] = eventStart[15];
+    hhmm[5] = '\0';
+    snprintf(label, sizeof(label), "%s %s", hhmm, eventTitle);
+  } else {
+    snprintf(label, sizeof(label), "%s", eventTitle);
+  }
+
+  dma_display->setTextSize(1);
+  dma_display->setTextColor(dma_display->color565(100, 200, 255));
+  dma_display->setCursor(1, 1);
+  dma_display->print(label);
+}
+
 // ─── Pantalla "Conectando..." ──────────────────────────
 void showConnecting(const char* msg) {
   dma_display->fillScreen(0);
@@ -268,6 +302,9 @@ void drawClock() {
 
   // ─── CLIMA ──────────────────────────────────────────
   drawWeatherWidget();
+
+  // ─── CALENDARIO ─────────────────────────────────────
+  drawCalendarWidget();
 
   // ─── MARQUEE INFERIOR: día + fecha ──────────────────
   if (!getMarqueeActivo()) { dma_display->flipDMABuffer(); return; }

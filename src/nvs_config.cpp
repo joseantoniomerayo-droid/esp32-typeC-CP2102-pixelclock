@@ -71,6 +71,9 @@ void setClimaRefresh(int v) { nvsSaveInt("clima_refresh", v); }
 bool getUsarNocturno() { return nvsLoadInt("usar_nocturno", DEF_USAR_NOCTURNO); }
 void setUsarNocturno(bool v) { nvsSaveInt("usar_nocturno", v); }
 
+bool getCalendarActivo() { return nvsLoadInt("calendar_activo", DEF_CALENDAR_ACTIVO); }
+void setCalendarActivo(bool v) { nvsSaveInt("calendar_activo", v); }
+
 void setLatitud(float v) {
   char buf[16]; snprintf(buf, sizeof(buf), "%.4f", v); nvsSaveStr("clima_lat", buf);
 }
