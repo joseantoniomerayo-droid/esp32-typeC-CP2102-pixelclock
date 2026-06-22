@@ -69,7 +69,7 @@ sudo cp index.html /var/www/html/index.html
 
 | Sección | Parámetros |
 |---|---|
-| **Conexión MQTT** (colapsable) | Servidor (IP), Puerto (9001 por defecto), Usuario, Contraseña |
+| **Conexión MQTT** (colapsable) | Servidor (IP), Puerto (9001 por defecto — el que configuramos en Mosquitto para WebSocket, aunque puede ser cualquiera), Usuario, Contraseña |
 | **Esquema de Color** | Brillo día/noche, Gradiente día/noche, Modo noche (toggle), Horario noche |
 | **Fecha** | Mostrar fecha (toggle), Formato, Día semana |
 | **Clima** | Latitud, Longitud, Refresco (minutos) |
