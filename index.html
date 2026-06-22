@@ -70,12 +70,15 @@
 <div class="card" id="connCard">
   <h2 onclick="toggleConn()">Conexión MQTT</h2>
   <div class="body">
-    <div class="row"><label>Servidor</label><input type="text" id="mqttHost" value="192.168.1.59" placeholder="IP:puerto"></div>
+    <div class="row"><label>Servidor</label><input type="text" id="mqttHost" value="192.168.1.59" placeholder="IP"></div>
+    <div class="row"><label>Puerto</label><input type="number" id="mqttPort" value="9001" min="1" max="65535"></div>
     <div class="row"><label>Usuario</label><input type="text" id="mqttUser" value="pixelclock"></div>
     <div class="row"><label>Contraseña</label><input type="password" id="mqttPass" value="pixelclock"></div>
     <button id="connBtn" onclick="toggleConnect()">Conectar</button>
   </div>
 </div>
+
+<div id="cfgBody" class="hidden">
 
 <div class="card">
   <h2>Esquema de Color</h2>
@@ -141,8 +144,8 @@
     <div class="row" style="margin-top:8px;"><label>Refresco</label><input type="range" id="climaRefresh" min="5" max="120" oninput="dirty(this)"><span class="val" id="climaRefreshVal">30 min</span></div>
   </div>
 </div>
-
-<button id="saveBtn" onclick="send()" disabled>Guardar configuración</button>
+  <button id="saveBtn" onclick="send()" disabled>Guardar configuración</button>
+</div>
 
 <div class="card" style="margin-top:10px;">
   <h2>Estado actual</h2>
@@ -213,6 +216,7 @@ function setStatus(st, txt) {
   document.getElementById('saveBtn').disabled = (st !== 'on' || dirtyFields.size === 0);
   document.getElementById('connBtn').textContent = st === 'on' ? 'Desconectar' : 'Conectar';
   document.getElementById('connBtn').disabled = false;
+  document.getElementById('cfgBody').classList.toggle('hidden', st !== 'on');
   if (st === 'on') document.getElementById('connCard').classList.add('collapsed');
 }
 
@@ -225,9 +229,10 @@ function toggleConnect() {
   }
 
   const host = document.getElementById('mqttHost').value;
+  const port = document.getElementById('mqttPort').value || 9001;
   const user = document.getElementById('mqttUser').value;
   const pass = document.getElementById('mqttPass').value;
-  const url = 'ws://' + host + ':9001/mqtt';
+  const url = 'ws://' + host + ':' + port + '/mqtt';
 
   setStatus('connecting', 'Conectando...');
   document.getElementById('connBtn').disabled = true;
