@@ -160,6 +160,18 @@ static const uint8_t stormIcon[8] = {
   0b01000010, 0b00100100, 0b00011000, 0b00100100,
 };
 
+// ─── Icono calendario 8×8 ──────────────────────────────
+static const uint8_t calendarIcon[8] = {
+  0b01111110,
+  0b01000010,
+  0b11111111,
+  0b10000001,
+  0b10000001,
+  0b10000001,
+  0b10000001,
+  0b11111111,
+};
+
 static const uint8_t* pickWeatherIcon(int wmoCode) {
   if (wmoCode == 0 || wmoCode == 1) return sunIcon;
   if (wmoCode <= 3) return cloudyIcon;
@@ -217,7 +229,14 @@ void setCalendarEvent(const char* title, const char* start) {
 static void drawCalendarWidget() {
   if (!getCalendarActivo() || strlen(eventTitle) == 0) return;
 
-  // Extraer HH:MM del formato ISO 8601 si existe
+  // Icono calendario (cyan)
+  uint16_t col = dma_display->color565(100, 200, 255);
+  for (int row = 0; row < 8; row++)
+    for (int c = 0; c < 8; c++)
+      if (calendarIcon[row] & (1 << (7 - c)))
+        dma_display->drawPixel(1 + c, 1 + row, col);
+
+  // Texto del evento
   char label[80];
   if (strlen(eventStart) >= 11) {
     char hhmm[6];
@@ -233,8 +252,8 @@ static void drawCalendarWidget() {
   }
 
   dma_display->setTextSize(1);
-  dma_display->setTextColor(dma_display->color565(100, 200, 255));
-  dma_display->setCursor(1, 1);
+  dma_display->setTextColor(col);
+  dma_display->setCursor(10, 2);
   dma_display->print(label);
 }
 
