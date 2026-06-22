@@ -56,7 +56,7 @@ El panel mostrará la cuenta atrás y el ESP32 se reiniciará borrando toda la c
 
 ### Web UI
 
-Interfaz web que conecta al broker MQTT por WebSocket (puerto 9001).
+Interfaz web que conecta al broker MQTT por WebSocket.
 No requiere backend — solo HTML + JavaScript.
 
 Para usarla, copia `index.html` al servidor web (Nginx en la VM del broker):
@@ -65,23 +65,19 @@ Para usarla, copia `index.html` al servidor web (Nginx en la VM del broker):
 sudo cp index.html /var/www/html/index.html
 ```
 
-Si tu broker está en otra IP, edita las constantes al inicio del `<script>` en `index.html`:
-
-```javascript
-const BROKER = 'ws://TU_IP:9001/mqtt';
-const USER = 'tu_usuario';
-const PASS = 'tu_contraseña';
-```
-
 **Secciones de la interfaz:**
 
 | Sección | Parámetros |
 |---|---|
-| **Brillo** | Día (0–255), Noche (0–255) |
-| **Horario noche** | Hora de inicio y fin del modo nocturno |
-| **Gradiente día** | Cian→Rojo, Amarillo→Rojo |
-| **Gradiente noche** | Cian→Rojo, Amarillo→Rojo, Azul tenue |
+| **Conexión MQTT** (colapsable) | Servidor (IP), Puerto (9001 por defecto), Usuario, Contraseña |
+| **Esquema de Color** | Brillo día/noche, Gradiente día/noche, Modo noche (toggle), Horario noche |
+| **Fecha** | Mostrar fecha (toggle), Formato, Día semana |
 | **Clima** | Latitud, Longitud, Refresco (minutos) |
+| **Estado actual** | JSON de configuración recibido del ESP32 |
+
+> **Nota:** Las secciones de configuración (Esquema Color, Fecha, Clima y botón Guardar)
+> solo se muestran cuando hay conexión MQTT activa. Al desconectar, solo queda visible
+> la tarjeta de Conexión y el Estado actual.
 
 ### Control por MQTT
 Suscríbete a `reloj/status` para ver el estado actual.
