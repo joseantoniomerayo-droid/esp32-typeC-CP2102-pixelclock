@@ -239,14 +239,26 @@ static void drawTinyText(int x, int y, const char* text, uint16_t color) {
   }
 }
 
-// ─── Icono calendario 8×8 ──────────────────────────────
-static const uint8_t calendarIcon[8] = {
-  0b01111110,
-  0b01000010,
+// ─── Icono calendario 8×8 (bicolor) ─────────────────────
+// Capa roja: barra superior del calendario
+static const uint8_t calRed[8] = {
+  0b00111100,
+  0b00111100,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+};
+// Capa cyan: cuerpo con bordes y numeros
+static const uint8_t calBody[8] = {
+  0b00000000,
+  0b00000000,
   0b11111111,
+  0b10100101,
   0b10000001,
-  0b10000001,
-  0b10000001,
+  0b10011001,
   0b10000001,
   0b11111111,
 };
@@ -357,12 +369,18 @@ static void drawCalendarWidget() {
   const char* time = events[currentEventIdx].time;
   const char* title = events[currentEventIdx].title;
 
-  // Icono calendario (cyan)
-  uint16_t col = dma_display->color565(100, 200, 255);
-  for (int row = 0; row < 8; row++)
-    for (int c = 0; c < 8; c++)
-      if (calendarIcon[row] & (1 << (7 - c)))
-        dma_display->drawPixel(1 + c, 1 + row, col);
+  // Icono calendario bicolor (rojo + cyan)
+  uint16_t colRed = dma_display->color565(220, 60, 60);
+  uint16_t colCyan = dma_display->color565(100, 200, 255);
+  for (int row = 0; row < 8; row++) {
+    for (int c = 0; c < 8; c++) {
+      uint8_t mask = 1 << (7 - c);
+      if (calRed[row] & mask)
+        dma_display->drawPixel(1 + c, 1 + row, colRed);
+      else if (calBody[row] & mask)
+        dma_display->drawPixel(1 + c, 1 + row, colCyan);
+    }
+  }
 
   // Texto (fuente 6x8 estandar, truncado si invade clima)
   // Weather empieza en x=94, dejamos margen hasta x=90
@@ -383,7 +401,7 @@ static void drawCalendarWidget() {
   }
 
   dma_display->setTextSize(1);
-  dma_display->setTextColor(col);
+  dma_display->setTextColor(colCyan);
   dma_display->setCursor(10, 2);
   dma_display->print(label);
 }
