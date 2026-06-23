@@ -312,8 +312,10 @@ void setCalendarEvents(JsonArray arr) {
     strncpy(events[eventCount].time, e[0] | "", 5);
     events[eventCount].time[5] = '\0';
     strncpy(events[eventCount].title, e[1] | "", sizeof(events[0].title)-1);
+    Serial.printf("[EVENTS] #%d: %s %s\n", eventCount, events[eventCount].time, events[eventCount].title);
     eventCount++;
   }
+  Serial.printf("[EVENTS] loaded %d events\n", eventCount);
 }
 
 // ─── Calendario (esquina superior izquierda) ────────────

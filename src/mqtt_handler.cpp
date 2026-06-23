@@ -31,7 +31,8 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
   if (strcmp(topic, "reloj/events") == 0) {
     StaticJsonDocument<512> doc;
     DeserializationError err = deserializeJson(doc, buf);
-    if (err) return;
+    if (err) { Serial.printf("[EVENTS] parse error: %s\n", err.c_str()); return; }
+    Serial.printf("[EVENTS] received, count=%d\n", doc["e"].size());
     setCalendarEvents(doc["e"].as<JsonArray>());
     return;
   }
