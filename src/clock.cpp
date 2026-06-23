@@ -303,13 +303,30 @@ static int eventCount = 0;
 static int currentEventIdx = 0;
 static unsigned long lastEventRotate = 0;
 
+// Comprueba si la hora del evento ya ha pasado
+static bool isTimePassed(const char* timeStr) {
+  if (strlen(timeStr) == 0) return false; // evento de todo el dia
+  if (strlen(timeStr) < 5) return false;
+
+  struct tm t;
+  if (!getLocalTime(&t, 50)) return false;
+
+  int eh = (timeStr[0]-'0')*10 + (timeStr[1]-'0');
+  int em = (timeStr[3]-'0')*10 + (timeStr[4]-'0');
+
+  return (t.tm_hour > eh) || (t.tm_hour == eh && t.tm_min > em);
+}
+
 void setCalendarEvents(JsonArray arr) {
   eventCount = 0;
   currentEventIdx = 0;
   for (JsonVariant v : arr) {
     if (eventCount >= MAX_EVENTS) break;
     JsonArray e = v;
-    strncpy(events[eventCount].time, e[0] | "", 5);
+    const char* t = e[0] | "";
+    // Saltar eventos cuya hora ya paso
+    if (isTimePassed(t)) continue;
+    strncpy(events[eventCount].time, t, 5);
     events[eventCount].time[5] = '\0';
     strncpy(events[eventCount].title, e[1] | "", sizeof(events[0].title)-1);
     Serial.printf("[EVENTS] #%d: %s %s\n", eventCount, events[eventCount].time, events[eventCount].title);
@@ -322,11 +339,20 @@ void setCalendarEvents(JsonArray arr) {
 static void drawCalendarWidget() {
   if (!getCalendarActivo() || eventCount == 0) return;
 
-  // Rotar cada 5 segundos
+  // Rotar cada 5 segundos, saltando eventos pasados
   if (millis() - lastEventRotate > 5000) {
     lastEventRotate = millis();
-    currentEventIdx = (currentEventIdx + 1) % eventCount;
+    int tries = 0;
+    do {
+      currentEventIdx = (currentEventIdx + 1) % eventCount;
+      tries++;
+    } while (isTimePassed(events[currentEventIdx].time) && tries < eventCount);
+    // Si todos han pasado, no mostrar nada
+    if (isTimePassed(events[currentEventIdx].time)) return;
   }
+
+  // Si el evento actual ya paso (solo ocurre si estaba visible al pasar la hora)
+  if (isTimePassed(events[currentEventIdx].time)) return;
 
   const char* time = events[currentEventIdx].time;
   const char* title = events[currentEventIdx].title;
