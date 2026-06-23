@@ -43,6 +43,42 @@ configuración por WiFiManager + Web UI vía MQTT.
 - Coordenadas configurables vía web o MQTT
 - Zona horaria automática según coordenadas
 
+### Eventos de calendario
+El ESP32 se suscribe a `reloj/events` para recibir eventos del día y mostrarlos en el panel.
+
+**Formato MQTT (compacto):**
+```json
+{"e":[["14:00","Reunión equipo"],["17:30","Cita"],["","Todo el día"]]}
+```
+- `e`: array de eventos, cada uno es `[hora, título]`
+- Hora vacía `""` para eventos de todo el día
+- Máximo 8 eventos por mensaje
+- Para limpiar: `{"e":[]}`
+
+**En el panel LED:**
+- Icono calendario bicolor (rojo + cyan) en esquina superior izquierda
+- Texto con hora y título en cyan, fuente 6×8
+- Los eventos rotan automáticamente cada 5 segundos
+- Si el texto es demasiado largo para el espacio disponible, se trunca con `..`
+- Los eventos cuya hora ya ha pasado se filtran automáticamente al cargar
+- El filtro también se aplica durante la rotación: si la hora de un evento expira mientras se muestra, se salta
+
+**Control:**
+- `calendar_activo` (0/1) activa o desactiva la visualización de eventos, configurable vía `reloj/config`
+- Por defecto está activo
+
+**Ejemplo desde terminal:**
+```bash
+# Enviar eventos
+mosquitto_pub -h BROKER_IP -t "reloj/events" \
+  -m '{"e":[["14:00","Reunión equipo"]]}' \
+  -u usuario -P contraseña
+
+# Desactivar calendario
+mosquitto_pub -h BROKER_IP -t "reloj/config" \
+  -m '{"calendar_activo":0}' -u usuario -P contraseña
+```
+
 ### Primer arranque (WiFiManager)
 1. El ESP32 crea una red WiFi **PixelClock-AP** (sin contraseña)
 2. El panel muestra un código QR para conectar directamente
@@ -108,6 +144,7 @@ Publica en `reloj/config` con formato JSON para cambiar parámetros:
 | `clima_refresh` | 5–120 | Minutos entre actualizaciones |
 | `clima_lat` | -90–90 | Latitud |
 | `clima_lon` | -180–180 | Longitud |
+| `calendar_activo` | 0–1 | Mostrar eventos de calendario en el panel |
 
 Ejemplo desde terminal:
 
