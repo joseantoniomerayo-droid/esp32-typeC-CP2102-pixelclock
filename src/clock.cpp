@@ -160,6 +160,85 @@ static const uint8_t stormIcon[8] = {
   0b01000010, 0b00100100, 0b00011000, 0b00100100,
 };
 
+// ─── Fuente 4×6 (columnas x filas) ──────────────────────
+// Cada caracter = 4 columnas, 6 filas (bit 0 = arriba)
+// Solo mayusculas, digitos, espacio, dos puntos, guion, barra
+#define FONT_W 4
+#define FONT_H 6
+
+// Indices: 0=espacio, 1-10=0-9, 11-36=A-Z, 37=:, 38=-, 39=/
+// Tabla de conversion: caracter -> indice
+static int charIdx(char c) {
+  if (c == ' ') return 0;
+  if (c >= '0' && c <= '9') return 1 + (c - '0');
+  if (c >= 'A' && c <= 'Z') return 11 + (c - 'A');
+  if (c >= 'a' && c <= 'z') return 11 + (c - 'a');
+  if (c == ':') return 37;
+  if (c == '-') return 38;
+  if (c == '/') return 39;
+  return 0; // fallback a espacio
+}
+
+// 40 caracteres x 4 columnas = 160 bytes
+static const uint8_t tinyFont[40][4] = {
+  {0x00,0x00,0x00,0x00}, // 0 espacio
+  {0x00,0x7C,0x00,0x00}, // 1 0
+  {0x00,0x24,0x7C,0x00}, // 2 1
+  {0x44,0x64,0x54,0x4C}, // 3 2
+  {0x44,0x54,0x54,0x28}, // 4 3
+  {0x70,0x10,0x10,0x7C}, // 5 4
+  {0x74,0x54,0x54,0x28}, // 6 5
+  {0x7C,0x44,0x44,0x7C}, // 7 6
+  {0x7C,0x44,0x44,0x38}, // 8 7
+  {0x04,0x04,0x7C,0x04}, // 9 8
+  {0x38,0x44,0x44,0x7C}, // 10 9
+  {0x7C,0x20,0x20,0x7C}, // 11 A
+  {0x7C,0x54,0x54,0x28}, // 12 B
+  {0x38,0x44,0x44,0x28}, // 13 C
+  {0x7C,0x44,0x44,0x38}, // 14 D
+  {0x7C,0x54,0x54,0x44}, // 15 E
+  {0x7C,0x14,0x14,0x04}, // 16 F
+  {0x38,0x44,0x54,0x78}, // 17 G
+  {0x7C,0x10,0x10,0x7C}, // 18 H
+  {0x44,0x7C,0x44,0x00}, // 19 I
+  {0x28,0x44,0x44,0x3C}, // 20 J
+  {0x7C,0x10,0x28,0x44}, // 21 K
+  {0x7C,0x40,0x40,0x40}, // 22 L
+  {0x7C,0x08,0x10,0x7C}, // 23 M
+  {0x7C,0x08,0x20,0x7C}, // 24 N
+  {0x38,0x44,0x44,0x38}, // 25 O
+  {0x7C,0x24,0x24,0x18}, // 26 P
+  {0x38,0x44,0x24,0x58}, // 27 Q
+  {0x7C,0x24,0x34,0x48}, // 28 R
+  {0x48,0x54,0x54,0x24}, // 29 S
+  {0x04,0x7C,0x04,0x00}, // 30 T
+  {0x3C,0x40,0x40,0x3C}, // 31 U
+  {0x1C,0x60,0x60,0x1C}, // 32 V
+  {0x7C,0x30,0x30,0x7C}, // 33 W
+  {0x44,0x28,0x10,0x28}, // 34 X
+  {0x44,0x28,0x10,0x7C}, // 35 Y
+  {0x44,0x64,0x54,0x4C}, // 36 Z
+  {0x00,0x48,0x00,0x00}, // 37 :
+  {0x00,0x10,0x10,0x00}, // 38 -
+  {0x40,0x20,0x10,0x08}, // 39 /
+};
+
+// Renderiza texto en fuente 4x6 en (x,y)
+static void drawTinyText(int x, int y, const char* text, uint16_t color) {
+  while (*text) {
+    int idx = charIdx(*text);
+    for (int col = 0; col < FONT_W; col++) {
+      uint8_t bits = tinyFont[idx][col];
+      for (int row = 0; row < FONT_H; row++) {
+        if (bits & (1 << row))
+          dma_display->drawPixel(x + col, y + row, color);
+      }
+    }
+    x += FONT_W + 1; // 1px interletrado
+    text++;
+  }
+}
+
 // ─── Icono calendario 8×8 ──────────────────────────────
 static const uint8_t calendarIcon[8] = {
   0b01111110,
@@ -257,16 +336,14 @@ static void drawCalendarWidget() {
       if (calendarIcon[row] & (1 << (7 - c)))
         dma_display->drawPixel(1 + c, 1 + row, col);
 
+  // Texto (fuente 4x6 compacta)
   char label[80];
   if (strlen(time) > 0)
     snprintf(label, sizeof(label), "%s %s", time, title);
   else
     snprintf(label, sizeof(label), "%s", title);
 
-  dma_display->setTextSize(1);
-  dma_display->setTextColor(col);
-  dma_display->setCursor(10, 2);
-  dma_display->print(label);
+  drawTinyText(10, 2, label, col);
 }
 
 // ─── Pantalla "Conectando..." ──────────────────────────
