@@ -216,18 +216,39 @@ static void drawWeatherWidget() {
   dma_display->print("C");
 }
 
-// ─── Evento calendario (recibido por MQTT) ──────────────
-static char eventTitle[64] = "";
-static char eventStart[16] = "";
+// ─── Eventos calendario (recibidos por MQTT) ─────────────
+#define MAX_EVENTS 8
 
-void setCalendarEvent(const char* title, const char* start) {
-  strncpy(eventTitle, title ? title : "", sizeof(eventTitle)-1);
-  strncpy(eventStart, start ? start : "", sizeof(eventStart)-1);
+static struct { char time[6]; char title[48]; } events[MAX_EVENTS];
+static int eventCount = 0;
+static int currentEventIdx = 0;
+static unsigned long lastEventRotate = 0;
+
+void setCalendarEvents(JsonArray arr) {
+  eventCount = 0;
+  currentEventIdx = 0;
+  for (JsonVariant v : arr) {
+    if (eventCount >= MAX_EVENTS) break;
+    JsonArray e = v;
+    strncpy(events[eventCount].time, e[0] | "", 5);
+    events[eventCount].time[5] = '\0';
+    strncpy(events[eventCount].title, e[1] | "", sizeof(events[0].title)-1);
+    eventCount++;
+  }
 }
 
 // ─── Calendario (esquina superior izquierda) ────────────
 static void drawCalendarWidget() {
-  if (!getCalendarActivo() || strlen(eventTitle) == 0) return;
+  if (!getCalendarActivo() || eventCount == 0) return;
+
+  // Rotar cada 5 segundos
+  if (millis() - lastEventRotate > 5000) {
+    lastEventRotate = millis();
+    currentEventIdx = (currentEventIdx + 1) % eventCount;
+  }
+
+  const char* time = events[currentEventIdx].time;
+  const char* title = events[currentEventIdx].title;
 
   // Icono calendario (cyan)
   uint16_t col = dma_display->color565(100, 200, 255);
@@ -236,20 +257,11 @@ static void drawCalendarWidget() {
       if (calendarIcon[row] & (1 << (7 - c)))
         dma_display->drawPixel(1 + c, 1 + row, col);
 
-  // Texto del evento
   char label[80];
-  if (strlen(eventStart) >= 11) {
-    char hhmm[6];
-    hhmm[0] = eventStart[11];
-    hhmm[1] = eventStart[12];
-    hhmm[2] = ':';
-    hhmm[3] = eventStart[14];
-    hhmm[4] = eventStart[15];
-    hhmm[5] = '\0';
-    snprintf(label, sizeof(label), "%s %s", hhmm, eventTitle);
-  } else {
-    snprintf(label, sizeof(label), "%s", eventTitle);
-  }
+  if (strlen(time) > 0)
+    snprintf(label, sizeof(label), "%s %s", time, title);
+  else
+    snprintf(label, sizeof(label), "%s", title);
 
   dma_display->setTextSize(1);
   dma_display->setTextColor(col);

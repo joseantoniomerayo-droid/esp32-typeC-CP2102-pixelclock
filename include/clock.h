@@ -1,7 +1,8 @@
 #pragma once
+#include <ArduinoJson.h>
 
 bool syncNTP();
 void fetchWeather();
 void  showConnecting(const char* msg);
-void  setCalendarEvent(const char* title, const char* start);
+void  setCalendarEvents(JsonArray arr);
 void  drawClock();

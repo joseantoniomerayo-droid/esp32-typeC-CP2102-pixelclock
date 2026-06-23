@@ -27,12 +27,12 @@ static void mqttCallback(char* topic, byte* payload, unsigned int len) {
 
   Serial.printf("[MQTT] %s (%d bytes)\n", topic, len);
 
-  // reloj/events = evento calendario
+  // reloj/events = eventos calendario
   if (strcmp(topic, "reloj/events") == 0) {
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<512> doc;
     DeserializationError err = deserializeJson(doc, buf);
     if (err) return;
-    setCalendarEvent(doc["title"] | "", doc["start"] | "");
+    setCalendarEvents(doc["e"].as<JsonArray>());
     return;
   }
 
