@@ -336,14 +336,28 @@ static void drawCalendarWidget() {
       if (calendarIcon[row] & (1 << (7 - c)))
         dma_display->drawPixel(1 + c, 1 + row, col);
 
-  // Texto (fuente 4x6 compacta)
+  // Texto (fuente 6x8 estandar, truncado si invade clima)
+  // Weather empieza en x=94, dejamos margen hasta x=90
   char label[80];
   if (strlen(time) > 0)
     snprintf(label, sizeof(label), "%s %s", time, title);
   else
     snprintf(label, sizeof(label), "%s", title);
 
-  drawTinyText(10, 2, label, col);
+  // Truncar si ocupa mas de 80px (13 chars ~ 78px)
+  int maxW = 80;
+  int textW = strlen(label) * 6;
+  if (textW > maxW) {
+    int maxChars = (maxW - 12) / 6; // reservar 12px para ".."
+    if (maxChars < 1) maxChars = 1;
+    label[maxChars] = '\0';
+    strcat(label, "..");
+  }
+
+  dma_display->setTextSize(1);
+  dma_display->setTextColor(col);
+  dma_display->setCursor(10, 2);
+  dma_display->print(label);
 }
 
 // ─── Pantalla "Conectando..." ──────────────────────────
